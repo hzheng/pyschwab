@@ -1,0 +1,19 @@
+auth:
+  base_auth_url: https://api.schwabapi.com/v1/oauth
+
+  app:
+    app_key: $APP_KEY
+    app_secret: $APP_SECRET
+    callback_url: $CALLBACK_URL
+
+  token:
+    token_path: config/tokens.json
+    refresh_token_expires_in_sec: 604800 # 7 days
+    access_token_expires_in_sec: 1800
+
+  input:
+    type: terminal
+    prompt: "After logging into your Schwab account and authorizing this app, paste the final URL here and press enter: "
+
+trading:
+  base_trader_url: https://api.schwabapi.com/trader/v1

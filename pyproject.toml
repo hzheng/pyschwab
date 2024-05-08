@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "pyschwab"
+version = "0.0.1"
+description = "A Python library for the Schwab trading API"
+authors = ["Hui Zheng <xyz.dll@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pytest = "^8.2.0"
+pyyaml = "^6.0.1"
+python-dotenv = "^1.0.1"
+requests = "^2.31.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
