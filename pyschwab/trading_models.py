@@ -1,7 +1,8 @@
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from .utils import camel_to_snake
+from .utils import camel_to_snake, str_to_time
 
 
 @dataclass
@@ -43,11 +44,13 @@ class Instrument:
         cusip (str): The CUSIP identifier for the instrument.
         symbol (str): The trading symbol for the instrument.
         net_change (float): The net change in the instrument's value since the last close.
+        instrument_id (int): The id of the instrument
     """
     asset_type: str
     cusip: str
     symbol: str
-    net_change: float
+    net_change: float = 0.0
+    instrument_id: int = 0
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'Instrument':
@@ -212,3 +215,99 @@ class TradingData:
             positions=positions,
             account=account
         )
+
+
+@dataclass
+class ExecutionLeg:
+    leg_id: int
+    price: float
+    quantity: int
+    mismarked_quantity: int
+    instrument_id: int
+    time: datetime
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'ExecutionLeg':
+        converted_data = {camel_to_snake(key): value for key, value in data.items()}
+        converted_data['time'] = datetime.fromisoformat(converted_data['time'])
+        return cls(**converted_data)
+
+
+@dataclass
+class OrderActivity:
+    activity_type: str
+    execution_type: str
+    quantity: int
+    order_remaining_quantity: int
+    execution_legs: List[ExecutionLeg]
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'OrderActivity':
+        converted_data = {camel_to_snake(key): value for key, value in data.items()}
+        converted_data['execution_legs'] = [ExecutionLeg.from_dict(leg) for leg in converted_data['execution_legs']]
+        return cls(**converted_data)
+
+
+@dataclass
+class OrderLeg:
+    order_leg_type: str
+    leg_id: int
+    instrument: Instrument
+    instruction: str
+    position_effect: str
+    quantity: int
+    quantity_type: str = None
+    div_cap_gains: str = None
+    to_symbol: str = None
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'OrderLeg':
+        converted_data = {camel_to_snake(key): value for key, value in data.items()}
+        converted_data['instrument'] = Instrument.from_dict(converted_data['instrument'])
+        return cls(**converted_data)
+
+
+@dataclass
+class Order:
+    order_id: int
+    order_type: str
+    session: str
+    status: str
+    price: float
+    quantity: int
+    filled_quantity: int
+    remaining_quantity: int
+    duration: str
+    entered_time: datetime
+    close_time: datetime
+    release_time: datetime
+    complex_order_strategy_type: str
+    requested_destination: str
+    destination_link_name: str
+    cancelable: bool
+    editable: bool
+    account_number: int
+    order_leg_collection: List[OrderLeg] = None
+    order_activity_collection: List[OrderActivity] = None
+    stop_price: float = 0.0
+    stop_price_link_basis: str = None
+    stop_price_link_type: str = None
+    stop_price_offset: float = None
+    stop_type: str = None
+    price_link_basis: str = None
+    price_link_type: str = None
+    tax_lot_method: str = None
+    activation_price: float = 0.0
+    special_instruction: str = None
+    order_strategy_type: str = None
+    cancel_time: datetime = None
+    tag: str = None
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'Order':
+        converted_data = {camel_to_snake(key): value for key, value in data.items()}
+        for key in ['cancel_time', 'release_time', 'entered_time', 'close_time']:
+            converted_data[key] = str_to_time(converted_data.get(key, None))
+        converted_data['order_leg_collection'] = [OrderLeg.from_dict(leg) for leg in converted_data.get('order_leg_collection', [])]
+        converted_data['order_activity_collection'] = [OrderActivity.from_dict(activity) for activity in converted_data.get('order_activity_collection', [])]
+        return cls(**converted_data)

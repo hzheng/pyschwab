@@ -1,6 +1,8 @@
 import os
 import re
+from datetime import datetime
 from typing import Any, Dict
+
 
 import requests
 
@@ -19,6 +21,32 @@ def get_value(config: Dict[str, Any], key: str, default_value: Any = None):
     if type(val) is str and val.startswith('$'):
         return os.getenv(val[1:])
     return val
+
+
+def time_to_str(dt: datetime | str) -> str:
+    if dt is None or isinstance(dt, str):
+        return dt
+
+    return f'{dt.isoformat()[:-3]}Z'
+
+
+def str_to_time(dt: datetime | str) -> datetime:
+    if dt is None or isinstance(dt, datetime):
+        return dt
+
+    return datetime.fromisoformat(dt)
+
+
+def format_params(params: Dict[str, Any]) -> Dict[str, Any]:
+    """Removes all key-value pairs from a dictionary where the value is None.
+
+    Args:
+    params (Dict[str, Any]): A dictionary whose keys are strings and values can be any type.
+
+    Returns:
+    Dict[str, Any]: The dictionary with None values removed.
+    """
+    return {key: value for key, value in params.items() if value is not None}
 
 
 def request(url, method='GET', headers=None, params=None, data=None) -> requests.Response:
