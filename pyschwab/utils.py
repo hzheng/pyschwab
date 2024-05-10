@@ -1,6 +1,7 @@
+import json
 import os
 import re
-from datetime import datetime
+from datetime import datetime, date
 from typing import Any, Dict
 
 
@@ -16,7 +17,66 @@ def camel_to_snake(name):
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
 
 
-def get_value(config: Dict[str, Any], key: str, default_value: Any = None):
+def snake_to_camel(name):
+    """
+    Convert snake_case string to camelCase string.
+    """
+    components = name.split('_')
+    return components[0] + ''.join(x.title() for x in components[1:])
+
+
+def dataclass_to_dict(instance):
+    """
+    Convert a dataclass instance to a dictionary with camelCase keys.
+    Handles nested dataclass instances as well.
+    """
+    if instance is None:
+        return instance
+    if isinstance(instance, list):
+        return [dataclass_to_dict(item) for item in instance]
+    if not hasattr(instance, '__dataclass_fields__'):
+        return instance
+
+    result = {}
+    for field_name in instance.__dataclass_fields__.keys():
+        value = getattr(instance, field_name)
+        key = snake_to_camel(field_name)
+        result[key] = dataclass_to_dict(value)
+    return result
+
+
+def is_subset_object(base_obj: Any, full_obj: Any) -> bool:
+    """
+    Recursively check if the object base_obj is a subset of full_obj, respecting the order for lists.
+    This function handles dictionaries, lists, and other comparable data types recursively.
+
+    Args:
+        base_obj (any): The base object to verify, can be a dict, list, or other types.
+        full_obj (any): The object that contains additional elements or key/value pairs.
+
+    Returns:
+        bool: True if base_obj is a subset of full_obj with order respected for lists, False otherwise.
+    """
+    if type(base_obj) != type(full_obj):
+        return False
+
+    if isinstance(base_obj, dict):
+        for key, value in base_obj.items():
+            if key not in full_obj:
+                return False
+            if not is_subset_object(value, full_obj[key]):
+                return False
+        return True
+
+    if isinstance(base_obj, list):
+        if len(base_obj) != len(full_obj):
+            return False
+        return all(is_subset_object(base_item, full_item) for base_item, full_item in zip(base_obj, full_obj))
+        
+    return base_obj == full_obj
+
+
+def get_value(config: Dict[str, Any], key: str, default_value: Any = None) -> str:
     val = config.get(key, default_value)
     if type(val) is str and val.startswith('$'):
         return os.getenv(val[1:])
@@ -49,9 +109,20 @@ def format_params(params: Dict[str, Any]) -> Dict[str, Any]:
     return {key: value for key, value in params.items() if value is not None}
 
 
-def request(url, method='GET', headers=None, params=None, data=None) -> requests.Response:
+def to_json_str(obj):
+    def json_encode(obj):
+        """Custom JSON serializer for objects not serializable by default json code."""
+        if isinstance(obj, datetime) or isinstance(obj, date):
+            return obj.isoformat()
+
+        return obj 
+
+    return json.dumps(obj, default=json_encode)
+
+
+def request(url, method='GET', headers=None, params=None, data=None, json=None) -> requests.Response:
     try:
-        response = requests.request(method=method, url=url, headers=headers, data=data, params=params)
+        response = requests.request(method=method, url=url, headers=headers, params=params, data=data, json=json)
         response.raise_for_status()  # Raises an HTTPError for bad responses
         return response
     except requests.exceptions.HTTPError as e:

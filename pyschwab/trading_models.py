@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from .utils import camel_to_snake, str_to_time
+from .utils import camel_to_snake, dataclass_to_dict, str_to_time
 
 
 @dataclass
@@ -41,14 +41,14 @@ class Instrument:
     
     Attributes:
         asset_type (str): The type of the asset, e.g., 'EQUITY'.
-        cusip (str): The CUSIP identifier for the instrument.
         symbol (str): The trading symbol for the instrument.
+        cusip (str): The CUSIP identifier for the instrument.
         net_change (float): The net change in the instrument's value since the last close.
         instrument_id (int): The id of the instrument
     """
     asset_type: str
-    cusip: str
     symbol: str
+    cusip: str = None
     net_change: float = 0.0
     instrument_id: int = 0
 
@@ -250,12 +250,12 @@ class OrderActivity:
 
 @dataclass
 class OrderLeg:
-    order_leg_type: str
-    leg_id: int
     instrument: Instrument
     instruction: str
-    position_effect: str
     quantity: int
+    position_effect: str = 'OPENING'
+    order_leg_type: str = 'EQUITY'
+    leg_id: int = 0
     quantity_type: str = None
     div_cap_gains: str = None
     to_symbol: str = None
@@ -269,24 +269,22 @@ class OrderLeg:
 
 @dataclass
 class Order:
-    order_id: int
     order_type: str
     session: str
-    status: str
     price: float
-    quantity: int
-    filled_quantity: int
-    remaining_quantity: int
     duration: str
     entered_time: datetime
     close_time: datetime
     release_time: datetime
-    complex_order_strategy_type: str
-    requested_destination: str
-    destination_link_name: str
-    cancelable: bool
-    editable: bool
-    account_number: int
+    order_id: int = 0
+    account_number: int = 0
+    status: str = 'AWAITING_PARENT_ORDER'
+    quantity: int = 0
+    filled_quantity: int = 0
+    remaining_quantity: int = 0
+    complex_order_strategy_type: str = "NONE"
+    requested_destination: str = "AUTO"
+    destination_link_name: str = None
     order_leg_collection: List[OrderLeg] = None
     order_activity_collection: List[OrderActivity] = None
     stop_price: float = 0.0
@@ -300,8 +298,11 @@ class Order:
     activation_price: float = 0.0
     special_instruction: str = None
     order_strategy_type: str = None
+    cancelable: bool = False
+    editable: bool = False
     cancel_time: datetime = None
     tag: str = None
+    status_description: str = None
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'Order':
@@ -311,3 +312,17 @@ class Order:
         converted_data['order_leg_collection'] = [OrderLeg.from_dict(leg) for leg in converted_data.get('order_leg_collection', [])]
         converted_data['order_activity_collection'] = [OrderActivity.from_dict(activity) for activity in converted_data.get('order_activity_collection', [])]
         return cls(**converted_data)
+
+    def to_dict(self, clean_keys: bool=False) -> Dict[str, Any]:
+        order_dict = dataclass_to_dict(self)
+        if clean_keys:
+            for key in ['enteredTime', 'closeTime', 'releaseTime', 'cancelTime', # time
+                        'remainingQuantity', 'filledQuantity', 'quantity', # quanity
+                        'priceLinkBasis', 'priceLinkType', 'activationPrice', # price
+                        'stopPriceLinkBasis', 'stopPrice', 'stopPriceOffset', 'stopType', # stop
+                        'destinationLinkName', 'requestedDestination', # destination
+                        'status', 'statusDescription', # status
+                        'tag', # tag
+                        ]:
+                del order_dict[key]
+        return order_dict

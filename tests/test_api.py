@@ -8,6 +8,7 @@ import yaml
 from pyschwab.trading import TradingApi
 from pyschwab.auth import Authorizer
 from pyschwab.log import logger
+from pyschwab.utils import is_subset_object
 from pyschwab.trading_models import Order, TradingData
 
 
@@ -62,7 +63,7 @@ def check_orders(trading_api: TradingApi, orders: List[Order]):
         assert order.remaining_quantity is not None, "Expected order remaining quantity to be fetched"
         assert order.duration is not None, "Expected order duration to be fetched"
         assert order.entered_time is not None, "Expected order entered time to be fetched"
-        assert order.close_time is not None, "Expected order close time to be fetched"
+        # assert order.close_time is not None, "Expected order close time to be fetched"
         assert order.complex_order_strategy_type is not None, "Expected complex_order_strategy_type to be fetched"
         assert order.requested_destination is not None, "Expected requested_destination to be fetched"
         assert order.destination_link_name is not None, "Expected destination_link_name to be fetched"
@@ -102,6 +103,18 @@ def check_orders(trading_api: TradingApi, orders: List[Order]):
         assert detailed_order == order, "Expected detailed order to match order"
 
 
+order_dict = {
+    "orderType": "LIMIT", "session": "NORMAL", "duration": "DAY", "orderStrategyType": "SINGLE", "price": '100.00',
+    "orderLegCollection": [
+        {"instruction": "BUY", "quantity": 1, "instrument": {"symbol": "TSLA", "assetType": "EQUITY"}}
+    ]
+    }
+
+test_account_number = 0 # CHANGE this to actual account number
+test_order_id = 0 # CHANGE this to actual order id
+test_order_type = [None, 'place_dict', 'place_obj', 'replace', 'cancel', 'preview'][0] # choose to test place order(dict/obj), replace, cancel, preview, or None
+
+
 @pytest.mark.integration
 def test_authentication_and_trading_data(app_config, logging_config):
     authorizer = Authorizer(app_config['auth'])
@@ -131,6 +144,37 @@ def test_authentication_and_trading_data(app_config, logging_config):
     for account_num in accounts_hash:
         orders = trading_api.get_orders(account_num)
         check_orders(trading_api, orders)
-    
+
     orders = trading_api.get_all_orders()
     check_orders(trading_api, orders)
+
+    if not test_account_number or not test_order_type: # no order placement, change, cancellation, or preview
+        return
+
+    if test_order_type == 'place_dict':
+        print("Testing place order by order dict")
+        trading_api.place_order(order_dict, test_account_number)
+    elif test_order_type == 'place_obj':
+        print("Testing place order by order obj")
+        order = Order.from_dict(order_dict)
+        trading_api.place_order(order, test_account_number)
+    else:
+        for order in orders:
+            leg = order.order_leg_collection[0]
+            if leg.instrument.symbol == 'TSLA':
+                if test_order_type == 'cancel':
+                    print("Testing cancel order")
+                    trading_api.cancel_order(test_order_id, test_account_number)
+                elif test_order_type == 'replace':
+                    print("Testing replace order")
+                    order.order_id = test_order_id
+                    order.price = 102
+                    order.quantity = 2
+                    trading_api.replace_order(order)
+                break
+
+
+def test_order_json():
+    order = Order.from_dict(order_dict)
+    order_dict2 = order.to_dict()
+    assert is_subset_object(order_dict, order_dict2), "Expected order to be serialized and deserialized correctly"

@@ -3,7 +3,7 @@ from typing import Any, Dict, List
 
 from dotenv import load_dotenv
 
-from .utils import format_params, request, time_to_str
+from .utils import format_params, request, time_to_str, to_json_str
 from .trading_models import Order, SecuritiesAccount, TradingData
 
 
@@ -19,6 +19,7 @@ class TradingApi:
         load_dotenv()
         self.base_trader_url = trading_config['base_trader_url']
         self.auth = {'Authorization': f'Bearer {access_token}'}
+        self.auth2 = {**self.auth, 'Content-Type': 'application/json'}
         response = request(f'{self.base_trader_url}/accounts/accountNumbers', headers=self.auth).json()
         self.accounts_hash = {account.get('accountNumber'): account.get('hashValue') for account in response}
         self.accounts: Dict[str, SecuritiesAccount] = {}
@@ -83,3 +84,41 @@ class TradingApi:
         account_hash = self._get_account_hash(account_num)
         order = request(f'{self.base_trader_url}/accounts/{account_hash}/orders/{order_id}', headers=self.auth).json()
         return Order.from_dict(order)
+
+    def place_order(self, order: Dict[str, Any] | Order, account_num: int | str) -> None:
+        account_hash = self._get_account_hash(account_num)
+        order_dict = self._convert_order(order)
+        request(f'{self.base_trader_url}/accounts/{account_hash}/orders', method='POST', headers=self.auth, json=order_dict)
+
+    def cancel_order(self, order_id: int | str, account_num: int | str) -> None:
+        account_hash = self._get_account_hash(account_num)
+        request(f'{self.base_trader_url}/accounts/{account_hash}/orders/{order_id}', method='DELETE', headers=self.auth)
+
+    def replace_order(self, order: Dict[str, Any] | Order) -> None:
+        order_dict = self._convert_order(order)
+        order_id = order_dict.get('orderId', None)
+        if not order_id:
+            raise ValueError("Order ID not found in order data.")
+        account_num = order_dict.get('accountNumber', None)
+        if not account_num:
+            raise ValueError("Account number not found in order data.")
+
+        account_hash = self._get_account_hash(account_num)
+        order_json = to_json_str(order_dict)
+        request(f'{self.base_trader_url}/accounts/{account_hash}/orders/{order_id}', method='PUT', headers=self.auth2, data=order_json)
+
+    def preview_order(self, order: Dict[str, Any] | Order, account_num: int | str) -> Dict[str, Any]:
+        """Coming Soon as per official document"""
+        account_hash = self._get_account_hash(account_num)
+        order_dict = self._convert_order(order)
+        order_json = to_json_str(order_dict)
+        return request(f'{self.base_trader_url}/accounts/{account_hash}/previewOrder', method='POST', headers=self.auth2, data=order_json).json()
+
+    def _convert_order(self, order: Dict[str, Any] | Order) -> Dict[str, Any]:
+        if isinstance(order, Dict):
+            return order
+
+        if isinstance(order, Order):
+            return order.to_dict(clean_keys=True)
+ 
+        raise ValueError("Order must be a dictionary or Order object.")
