@@ -51,6 +51,10 @@ class Instrument:
     cusip: str = None
     net_change: float = 0.0
     instrument_id: int = 0
+    description: str = None
+    closing_price: float = 0.0
+    status: str = None
+    type: str = None
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'Instrument':
@@ -326,3 +330,68 @@ class Order:
                         ]:
                 del order_dict[key]
         return order_dict
+
+
+@dataclass
+class TransferItem:
+    instrument: Instrument
+    amount: float
+    cost: float
+    price: float = 0.0
+    fee_type: str = None
+    position_effect: str = None
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'TransferItem':
+        converted_data = {camel_to_snake(key): value for key, value in data.items()}
+        converted_data['instrument'] = Instrument.from_dict(converted_data['instrument'])
+        return cls(**converted_data)
+
+
+@dataclass
+class User:
+    cd_domain_id: str
+    login: str
+    type: str
+    user_id: int
+    system_user_name: str
+    first_name: str
+    last_name: str
+    broker_rep_code: str
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'User':
+        if data is None:
+            return None
+        converted_data = {camel_to_snake(key): value for key, value in data.items()}
+        return cls(**converted_data)
+
+
+@dataclass
+class Transaction:
+    activity_id: int
+    time: datetime
+    type: str
+    status: str
+    position_id: int
+    net_amount: float
+    account_number: str
+    sub_account: str
+    transfer_items: List[TransferItem]
+    user: User = None
+    order_id: int = 0
+    trade_date: datetime = None
+    settlement_date: datetime = None
+    description: str = None
+    activity_type: str = None
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'Transaction':
+        converted_data = {camel_to_snake(key): value for key, value in data.items()}
+        converted_data['user'] = User.from_dict(converted_data.get('user', None))
+        for dt_key in ['time', 'trade_date', 'settlement_date']:
+            dt = converted_data.get(dt_key, None)
+            if dt:
+                converted_data[dt_key] = datetime.fromisoformat(dt)
+        converted_data['transfer_items'] = [TransferItem.from_dict(item) for item in converted_data['transfer_items']]
+        return cls(**converted_data)

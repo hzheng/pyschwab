@@ -142,6 +142,29 @@ def test_authentication_and_trading_data(app_config, logging_config):
         check_trading_data(trading_data)
 
     for account_num in accounts_hash:
+        transactions = trading_api.get_transactions(account_num)
+        for transaction in transactions:
+            assert transaction is not None, "Expected transaction to be fetched"
+            assert transaction.activity_id is not None, "Expected activity id to be fetched"
+            assert transaction.time is not None, "Expected time to be fetched"
+            assert transaction.type is not None, "Expected transaction type to be fetched"
+            assert transaction.status is not None, "Expected status to be fetched"
+            assert transaction.position_id is not None, "Expected position id to be fetched"
+            assert transaction.net_amount is not None, "Expected net amount to be fetched"
+            assert transaction.account_number is not None, "Expected account number to be fetched"
+            assert transaction.sub_account is not None, "Expected sub account to be fetched"
+            assert transaction.sub_account is not None, "Expected sub account to be fetched"
+            transfer_items = transaction.transfer_items
+            assert transfer_items is not None, "Expected transfer items to be fetched"
+            for transfer_item in transfer_items:
+                assert transfer_item.instrument is not None, "Expected instrument to be fetched"
+                assert transfer_item.amount is not None, "Expected amount to be fetched"
+                assert transfer_item.cost is not None, "Expected cost to be fetched"
+                assert transfer_item.price is not None, "Expected price to be fetched"
+
+            transaction_detail = trading_api.get_transaction(account_num, transaction.activity_id) 
+            assert transaction_detail == transaction, "Expected transaction detail to match transaction"
+
         orders = trading_api.get_orders(account_num)
         check_orders(trading_api, orders)
 

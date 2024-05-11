@@ -4,7 +4,7 @@ from typing import Any, Dict, List
 from dotenv import load_dotenv
 
 from .utils import format_params, request, time_to_str, to_json_str
-from .trading_models import Order, SecuritiesAccount, TradingData
+from .trading_models import Order, SecuritiesAccount, TradingData, Transaction
 
 
 """
@@ -122,3 +122,17 @@ class TradingApi:
             return order.to_dict(clean_keys=True)
  
         raise ValueError("Order must be a dictionary or Order object.")
+
+    def get_transactions(self, account_num: str, start_time: datetime=None, end_time: datetime=None, symbol: str=None, types: str="TRADE") -> List[Transaction]:
+        account_hash = self._get_account_hash(account_num)
+        now = datetime.now()
+        start = time_to_str(start_time or now - timedelta(days=30))
+        end = time_to_str(end_time or now)
+        params = {'startDate': start, 'endDate': end, 'symbol': symbol, 'types': types}
+        transactions = request(f'{self.base_trader_url}/accounts/{account_hash}/transactions', headers=self.auth, params=format_params(params)).json()
+        return [Transaction.from_dict(transaction) for transaction in transactions]
+
+    def get_transaction(self, account_num: int | str, transaction_id: str) -> Transaction:
+        account_hash = self._get_account_hash(account_num)
+        transaction = request(f'{self.base_trader_url}/accounts/{account_hash}/transactions/{transaction_id}', headers=self.auth).json()
+        return Transaction.from_dict(transaction)
