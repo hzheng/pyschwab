@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from .utils import camel_to_snake, dataclass_to_dict, str_to_time
+from .utils import camel_to_snake, dataclass_to_dict, to_time
 
 
 @dataclass
@@ -312,7 +312,7 @@ class Order:
     def from_dict(cls, data: Dict[str, Any]) -> 'Order':
         converted_data = {camel_to_snake(key): value for key, value in data.items()}
         for key in ['cancel_time', 'release_time', 'entered_time', 'close_time']:
-            converted_data[key] = str_to_time(converted_data.get(key, None))
+            converted_data[key] = to_time(converted_data.get(key, None))
         converted_data['order_leg_collection'] = [OrderLeg.from_dict(leg) for leg in converted_data.get('order_leg_collection', [])]
         converted_data['order_activity_collection'] = [OrderActivity.from_dict(activity) for activity in converted_data.get('order_activity_collection', [])]
         return cls(**converted_data)
@@ -363,6 +363,7 @@ class User:
     def from_dict(cls, data: Dict[str, Any]) -> 'User':
         if data is None:
             return None
+
         converted_data = {camel_to_snake(key): value for key, value in data.items()}
         return cls(**converted_data)
 

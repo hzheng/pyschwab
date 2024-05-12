@@ -5,11 +5,12 @@ import pytest
 import logging
 import yaml
 
-from pyschwab.trading import TradingApi
 from pyschwab.auth import Authorizer
 from pyschwab.log import logger
-from pyschwab.utils import is_subset_object
+from pyschwab.market import MarketApi
+from pyschwab.trading import TradingApi
 from pyschwab.trading_models import Order, TradingData
+from pyschwab.utils import is_subset_object
 
 
 @pytest.fixture(scope="module")
@@ -201,3 +202,28 @@ def test_order_json():
     order = Order.from_dict(order_dict)
     order_dict2 = order.to_dict()
     assert is_subset_object(order_dict, order_dict2), "Expected order to be serialized and deserialized correctly"
+
+
+@pytest.mark.integration
+def test_market_data(app_config, logging_config):
+    authorizer = Authorizer(app_config['auth'])
+    access_token = authorizer.get_access_token()
+
+    market_api = MarketApi(access_token, app_config['market'])
+    symbols = ['TSLA', 'NVDA']
+    quotes = market_api.get_quotes(symbols)
+    for symbol in symbols:
+        quote = quotes[symbol] 
+        assert quote is not None, "Expected quote to be fetched"
+        assert quote.asset_main_type is not None, "Expected asset main type to be fetched"
+        assert quote.asset_sub_type is not None, "Expected asset sub type to be fetched"
+        assert quote.realtime is not None, "Expected realtime to be fetched"
+        assert quote.ssid is not None, "Expected ssid to be fetched"
+        assert quote.symbol is not None, "Expected symbol to be fetched"
+        assert quote.fundamental is not None, "Expected fundamental to be fetched"
+        assert quote.quote is not None, "Expected quote to be fetched"
+        assert quote.reference is not None, "Expected reference to be fetched"
+        assert quote.regular is not None, "Expected regular to be fetched"
+
+        quote_detail = market_api.get_quote(symbol)
+        assert quote == quote_detail, "Expected quote detail to match quote"

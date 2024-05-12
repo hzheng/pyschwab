@@ -1,8 +1,8 @@
 import json
 import os
 import re
-from datetime import datetime, date
-from typing import Any, Dict
+from datetime import datetime, date, UTC
+from typing import Any, Dict, List
 
 
 import requests
@@ -13,8 +13,12 @@ def camel_to_snake(name):
     """
     Convert camelCase string to snake_case string.
     """
+    if not name:
+        return name
+
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
-    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+    s2 = re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+    return "_" + s2 if s2[0].isdigit() else s2
 
 
 def snake_to_camel(name):
@@ -90,11 +94,17 @@ def time_to_str(dt: datetime | str) -> str:
     return f'{dt.isoformat()[:-3]}Z'
 
 
-def str_to_time(dt: datetime | str) -> datetime:
+def to_time(dt: datetime | str | int) -> datetime:
     if dt is None or isinstance(dt, datetime):
         return dt
 
-    return datetime.fromisoformat(dt)
+    if isinstance(dt, int):
+        return datetime.fromtimestamp(dt / 1000, UTC)
+
+    if isinstance(dt, str):
+        return datetime.fromisoformat(dt)
+ 
+    raise ValueError("Invalid datetime format.")
 
 
 def format_params(params: Dict[str, Any]) -> Dict[str, Any]:
@@ -107,6 +117,13 @@ def format_params(params: Dict[str, Any]) -> Dict[str, Any]:
     Dict[str, Any]: The dictionary with None values removed.
     """
     return {key: value for key, value in params.items() if value is not None}
+
+
+def format_list(lst: str | List) -> str:
+    if lst is None or isinstance(lst, str):
+        return lst
+
+    return ",".join(lst)
 
 
 def to_json_str(obj):

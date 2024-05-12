@@ -17,3 +17,6 @@ auth:
 
 trading:
   base_trader_url: https://api.schwabapi.com/trader/v1
+
+market:
+  base_market_url: https://api.schwabapi.com/marketdata/v1
