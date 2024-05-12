@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from .utils import camel_to_snake, to_time
 
@@ -134,4 +134,172 @@ class Quote:
         converted_data['quote'] = QuoteDetail.from_dict(converted_data.get('quote', None))
         converted_data['reference'] = Reference.from_dict(converted_data.get('reference', None))
         converted_data['regular'] = RegularMarket.from_dict(converted_data.get('regular', None))
+        return cls(**converted_data)
+
+
+@dataclass
+class Deliverable:
+    symbol: str
+    asset_type: str
+    deliverable_units: str
+    # currency_type: str
+ 
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'Deliverable':
+        if data is None:
+            return None
+
+        converted_data = {camel_to_snake(key): value for key, value in data.items()}
+        return cls(**converted_data)
+
+
+@dataclass
+class OptionDetail:
+    put_call: str
+    symbol: str
+    description: str
+    exchange_name: str
+    bid: float
+    ask: float
+    last: float
+    mark: float
+    bid_ask_size: str
+    bid_size: int
+    ask_size: int
+    last_size: int
+    high_price: float
+    low_price: float
+    open_price: float
+    close_price: float
+    high52_week: float
+    low52_week: float
+    total_volume: int
+    quote_time_in_long: int
+    trade_time_in_long: int
+    net_change: float
+    volatility: float
+    delta: float
+    gamma: float
+    theta: float
+    vega: float
+    rho: float
+    time_value: float
+    open_interest: int
+    in_the_money: bool
+    theoretical_option_value: float
+    theoretical_volatility: float
+    mini: bool
+    non_standard: bool
+    option_deliverables_list: List[Deliverable]
+    strike_price: float
+    expiration_date: str
+    exercise_type: str
+    days_to_expiration: int
+    expiration_type: str
+    last_trading_day: int
+    multiplier: float
+    settlement_type: str
+    deliverable_note: str
+    percent_change: float
+    mark_change: float
+    mark_percent_change: float
+    penny_pilot: bool
+    intrinsic_value: float
+    extrinsic_value: float
+    option_root: str
+    trade_date: int = 0
+ 
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'OptionDetail':
+        if data is None:
+            return None
+
+        converted_data = {camel_to_snake(key): value for key, value in data.items()}
+        converted_data['option_deliverables_list'] = [Deliverable.from_dict(deliverable) for deliverable in converted_data['option_deliverables_list']]
+        return cls(**converted_data)
+
+
+@dataclass
+class Underlying:
+    ask: float
+    ask_size: int
+    bid: float
+    bid_size: int
+    change: float
+    close: float
+    delayed: bool
+    description: str
+    exchange_name: str
+    fifty_two_week_high: float
+    fifty_two_week_low: float
+    high_price: float
+    last: float
+    low_price: float
+    mark: float
+    mark_change: float
+    mark_percent_change: float
+    open_price: float
+    percent_change: float
+    quote_time: int
+    symbol: str
+    total_volume: int
+    trade_time: int
+ 
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'Underlying':
+        if data is None:
+            return None
+
+        converted_data = {camel_to_snake(key): value for key, value in data.items()}
+        return cls(**converted_data)
+
+
+@dataclass
+class OptionChain:
+    symbol: str
+    status: str
+    asset_main_type: str
+    asset_sub_type: str
+    strategy: str
+    interval: float
+    is_delayed: bool
+    is_index: bool
+    is_chain_truncated: bool
+    days_to_expiration: int
+    number_of_contracts: int
+    interest_rate: float
+    underlying_price: float
+    volatility: float
+    call_exp_date_map: Dict[str, Dict[str, OptionDetail]]
+    put_exp_date_map: Dict[str, Dict[str, OptionDetail]]
+    underlying: Underlying = None
+ 
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'OptionChain':
+        if data is None:
+            return None
+
+        converted_data = {camel_to_snake(key): value for key, value in data.items()}
+        converted_data['underlying'] = Underlying.from_dict(converted_data.get('underlying', None))
+        converted_data['call_exp_date_map'] = cls._exp_date_map_from_dict(converted_data['call_exp_date_map'])
+        converted_data['put_exp_date_map'] = cls._exp_date_map_from_dict(converted_data['put_exp_date_map'])
+        return cls(**converted_data)
+
+    @classmethod
+    def _exp_date_map_from_dict(cls, exp_data_map: Dict[str, Dict[str, Any]]) -> Dict[str, Dict[str, OptionDetail]]:
+        return {exp_date: {strike_price: OptionDetail.from_dict(option_detail[0]) for strike_price, option_detail in exp_data.items()} for exp_date, exp_data in exp_data_map.items()}
+
+
+@dataclass
+class OptionExpiration:
+    expiration_date: str
+    days_to_expiration: int
+    expiration_type: str
+    settlement_type: str
+    option_roots: str
+    standard: bool
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'OptionExpiration':
+        converted_data = {camel_to_snake(key): value for key, value in data.items()}
         return cls(**converted_data)

@@ -35,6 +35,36 @@ class SecuritiesAccount:
 
 
 @dataclass
+class Deliverable:
+    asset_type: str
+    status: str
+    symbol: str
+    instrument_id: int
+    closing_price: float
+    type: str
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'Deliverable':
+        converted_data = {camel_to_snake(key): value for key, value in data.items()}
+        return cls(**converted_data)
+
+
+@dataclass
+class OptionDeliverable:
+    root_symbol: str
+    strike_percent: int
+    deliverable_number: int
+    deliverable_units: float
+    deliverable: Deliverable
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'OptionDeliverable':
+        converted_data = {camel_to_snake(key): value for key, value in data.items()}
+        converted_data['deliverable'] = Deliverable.from_dict(converted_data['deliverable'])
+        return cls(**converted_data)
+
+
+@dataclass
 class Instrument:
     """
     Represents the financial instrument in a trading position.
@@ -55,6 +85,13 @@ class Instrument:
     closing_price: float = 0.0
     status: str = None
     type: str = None
+    expiration_date: datetime = None
+    option_deliverables: List[Deliverable] = None
+    option_premium_multiplier: float = 0.0
+    put_call: str = None
+    strike_price: float = None
+    underlying_symbol: str = None
+    underlying_cusip: str = None
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'Instrument':
@@ -62,6 +99,12 @@ class Instrument:
         Create an instrument instance from a dictionary with camelCase keys.
         """
         converted_data = {camel_to_snake(key): value for key, value in data.items()}
+        expiration_time = converted_data.get('expiration_date', None)
+        if expiration_time:
+            converted_data['expiration_date'] = datetime.fromisoformat(expiration_time)
+        deliverables = converted_data.get('option_deliverables', None)
+        if deliverables:
+            converted_data['option_deliverables'] = [OptionDeliverable.from_dict(deliverable) for deliverable in converted_data['option_deliverables']]
         return cls(**converted_data)
 
 
