@@ -257,6 +257,20 @@ def test_market_data(app_config, logging_config):
         assert chain.settlement_type is not None, "Expected settlement type to be fetched"
         assert chain.option_roots is not None, "Expected option roots to be fetched"
         assert chain.standard is not None, "Expected standard to be fetched"
+ 
+    history = market_api.get_price_history('TSLA')
+    assert history is not None, "Expected price history to be fetched"
+    assert history.symbol is not None, "Expected symbol to be fetched"
+    assert history.empty is not None, "Expected empty to be fetched"
+    assert history.candles is not None, "Expected candles to be fetched"
+    assert len(history.candles) > 0, "Expected candles to have at least one entry"
+    for candle in history.candles:
+        assert isinstance(candle.datetime, datetime), "Expected datetime to be a datetime type"
+        assert candle.open is not None, "Expected open to be fetched"
+        assert candle.close is not None, "Expected close to be fetched"
+        assert candle.low is not None, "Expected low to be fetched"
+        assert candle.high is not None, "Expected high to be fetched"
+        assert candle.volume is not None, "Expected volume to be fetched"
 
 
 def check_exp_date_map(option_chain: OptionChain, field: str):

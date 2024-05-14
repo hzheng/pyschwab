@@ -85,6 +85,7 @@ class Reference:
     is_hard_to_borrow: bool
     is_shortable: bool
     htb_rate: float
+    htb_quantity: int = 0
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'Reference':
@@ -302,4 +303,41 @@ class OptionExpiration:
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'OptionExpiration':
         converted_data = {camel_to_snake(key): value for key, value in data.items()}
+        return cls(**converted_data)
+
+
+@dataclass
+class Candle:
+    datetime: datetime
+    open: float
+    close: float
+    low: float
+    high: float
+    volume: int
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'Candle':
+        if data is None:
+            return data
+
+        converted_data = {camel_to_snake(key): value for key, value in data.items()}
+        key = 'datetime'
+        converted_data[key] = to_time(converted_data.get(key, None))
+        return cls(**converted_data)
+
+
+@dataclass
+class PriceHistory:
+    candles: List[Candle]
+    empty: bool
+    symbol: str
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'PriceHistory':
+        if data is None:
+            return data
+
+        converted_data = {camel_to_snake(key): value for key, value in data.items()}
+        candles = converted_data.get('candles', [])
+        converted_data['candles'] = [ Candle.from_dict(candle) for candle in candles]
         return cls(**converted_data)

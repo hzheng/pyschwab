@@ -1,9 +1,11 @@
+from datetime import datetime, timedelta
 from typing import Any, Dict, List
 
 from dotenv import load_dotenv
 
-from .utils import format_params, request, format_list
-from .market_models import Quote, OptionChain, OptionExpiration
+from .market_models import Quote, OptionChain, OptionExpiration, PriceHistory
+from .types import PeriodFrequency
+from .utils import format_list, format_params, request, time_to_int
 
 
 """
@@ -46,3 +48,15 @@ class MarketApi:
         params = {'symbol': symbol}
         chains = request(f'{self.base_market_url}/expirationchain', headers=self.auth, params=format_params(params)).json()
         return [OptionExpiration.from_dict(chain) for chain in chains['expirationList']]
+
+    def get_price_history(self, symbol, period_freq: PeriodFrequency=PeriodFrequency(), start_date: datetime=None, end_date: datetime=None,
+                          need_extended_hours_data: bool=False, need_previous_close: bool=False):
+        now = datetime.now()
+        start = time_to_int(start_date or now - timedelta(days=30))
+        end = time_to_int(end_date or now)
+        params = {'symbol': symbol, 'periodType': period_freq.period_type, 'period': period_freq.period,
+                  'frequencyType': period_freq.frequency_type, 'frequency': period_freq.frequency,
+                  'startDate': start, 'endDate': end,
+                  'needExtendedHoursData': need_extended_hours_data, 'needPreviousClose': need_previous_close}
+        history = request(f'{self.base_market_url}/pricehistory', headers=self.auth, params=format_params(params)).json()
+        return PriceHistory.from_dict(history)

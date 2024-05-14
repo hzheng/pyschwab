@@ -94,6 +94,13 @@ def time_to_str(dt: datetime | str) -> str:
     return f'{dt.isoformat()[:-3]}Z'
 
 
+def time_to_int(dt: datetime) -> int:
+    if dt is None or isinstance(dt, str):
+        return dt
+
+    return int(dt.timestamp() * 1000)
+
+
 def to_time(dt: datetime | str | int) -> datetime:
     if dt is None or isinstance(dt, datetime):
         return dt
