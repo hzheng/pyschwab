@@ -1,6 +1,6 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from .utils import camel_to_snake, to_time
 
@@ -341,3 +341,75 @@ class PriceHistory:
         candles = converted_data.get('candles', [])
         converted_data['candles'] = [ Candle.from_dict(candle) for candle in candles]
         return cls(**converted_data)
+
+
+@dataclass
+class SessionTime:
+    start: datetime
+    end: datetime
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'SessionTime':
+        for key in ['start', 'end']:
+            data[key] = to_time(data.get(key, None))
+        return cls(**data)
+
+
+@dataclass
+class SessionHours:
+    pre_market: List[SessionTime] = field(default_factory=list)
+    regular_market: List[SessionTime] = field(default_factory=list)
+    post_market: List[SessionTime] = field(default_factory=list)
+    outcry_market: List[SessionTime] = field(default_factory=list)
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'SessionHours':
+        if data is None:
+            return data
+
+        converted_data = {camel_to_snake(key): value for key, value in data.items()}
+        for key in ['pre_market', 'regular_market', 'post_market', 'outcry_market']:
+            val = converted_data.get(key, None)
+            if val:
+                converted_data[key] = [SessionTime.from_dict(s) for s in val]
+        return cls(**converted_data)
+
+
+@dataclass
+class MarketProduct:
+    date: datetime
+    market_type: str
+    product: str
+    is_open: bool
+    session_hours: SessionHours
+    product_name: str = None
+    exchange: Optional[str] = None
+    category: Optional[str] = None
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'SessionHours':
+        if data is None:
+            return data
+
+        converted_data = {camel_to_snake(key): value for key, value in data.items()}
+        session_hours = converted_data.get('session_hours', None)
+        converted_data['session_hours'] = SessionHours.from_dict(session_hours)
+        return cls(**converted_data)
+
+@dataclass
+class MarketHours:
+    equity: Dict[str, MarketProduct] = field(default_factory=dict)
+    option: Dict[str, MarketProduct] = field(default_factory=dict)
+    bond: Dict[str, MarketProduct] = field(default_factory=dict)
+    future: Dict[str, MarketProduct] = field(default_factory=dict)
+    forex: Dict[str, MarketProduct] = field(default_factory=dict)
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'SessionHours':
+        if data is None:
+            return data
+
+        for key in ['equity', 'option', 'bond', 'future', 'forex']:
+            val = data.get(key, {})
+            data[key] = {symbol: MarketProduct.from_dict(product) for symbol, product in val.items()}
+        return cls(**data)

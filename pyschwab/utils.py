@@ -1,10 +1,10 @@
 import json
 import os
 import re
-from datetime import datetime, date, UTC
+from datetime import datetime, date, timedelta, UTC
 from typing import Any, Dict, List
 
-
+import holidays
 import requests
 
 from .exceptions import BadRequestException, BrokerAPIException, HTTPErrorException, InternetConnectionException, ServerErrorException
@@ -87,9 +87,12 @@ def get_value(config: Dict[str, Any], key: str, default_value: Any = None) -> st
     return val
 
 
-def time_to_str(dt: datetime | str) -> str:
+def time_to_str(dt: datetime | str, format: str=None) -> str:
     if dt is None or isinstance(dt, str):
         return dt
+
+    if format is not None:
+        return dt.strftime(format)
 
     return f'{dt.isoformat()[:-3]}Z'
 
@@ -112,6 +115,24 @@ def to_time(dt: datetime | str | int) -> datetime:
         return datetime.fromisoformat(dt)
  
     raise ValueError("Invalid datetime format.")
+
+
+def next_sunday():
+    today = datetime.now()
+    days_until_sunday = (6 - today.weekday()) % 7
+    days_until_sunday = 7 if days_until_sunday == 0 else days_until_sunday
+    return today + timedelta(days=days_until_sunday)
+
+
+def next_market_open_day():
+    today = datetime.now()
+    us_holidays = holidays.US(years=[today.year, today.year + 1])
+    next_day = today + timedelta(days=1)
+    while True:
+        if next_day.weekday() not in [5, 6] and next_day not in us_holidays:
+            return next_day
+
+        next_day += timedelta(days=1)
 
 
 def format_params(params: Dict[str, Any]) -> Dict[str, Any]:

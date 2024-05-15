@@ -3,9 +3,9 @@ from typing import Any, Dict, List
 
 from dotenv import load_dotenv
 
-from .market_models import Quote, OptionChain, OptionExpiration, PriceHistory
+from .market_models import MarketHours, OptionChain, OptionExpiration, PriceHistory, Quote
 from .types import PeriodFrequency
-from .utils import format_list, format_params, request, time_to_int
+from .utils import format_list, format_params, request, time_to_int, time_to_str
 
 
 """
@@ -60,3 +60,13 @@ class MarketApi:
                   'needExtendedHoursData': need_extended_hours_data, 'needPreviousClose': need_previous_close}
         history = request(f'{self.base_market_url}/pricehistory', headers=self.auth, params=format_params(params)).json()
         return PriceHistory.from_dict(history)
+
+    def get_market_hours(self, market: str, date=None) -> MarketHours:
+        params = {'date': time_to_str(date, '%Y-%m-%d')}
+        hours = request(f'{self.base_market_url}/markets/{market}', headers=self.auth, params=format_params(params)).json()
+        return MarketHours.from_dict(hours)
+
+    def get_markets_hours(self, markets: str | List[str], date=None) -> MarketHours:
+        params = {'markets': markets, 'date': time_to_str(date, '%Y-%m-%d')}
+        hours = request(f'{self.base_market_url}/markets', headers=self.auth, params=format_params(params)).json()
+        return MarketHours.from_dict(hours)

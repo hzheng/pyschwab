@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict, List
+from typing import List
 
 import pytest
 import logging
@@ -11,7 +11,7 @@ from pyschwab.market import MarketApi
 from pyschwab.market_models import OptionChain, OptionDetail
 from pyschwab.trading import TradingApi
 from pyschwab.trading_models import Order, TradingData
-from pyschwab.utils import is_subset_object
+from pyschwab.utils import is_subset_object, next_market_open_day, next_sunday
 
 
 @pytest.fixture(scope="module")
@@ -271,6 +271,26 @@ def test_market_data(app_config, logging_config):
         assert candle.low is not None, "Expected low to be fetched"
         assert candle.high is not None, "Expected high to be fetched"
         assert candle.volume is not None, "Expected volume to be fetched"
+
+    sunday = next_sunday()
+    sunday_hours = market_api.get_market_hours('equity', sunday)
+    assert sunday_hours is not None, "Expected market hours to be fetched"
+    assert sunday_hours.equity is not None, "Expected equity hours to be fetched"
+    equity = sunday_hours.equity.get("equity", None)
+    assert equity is not None, "Expected equity market hours to be fetched"
+    assert not equity.is_open, "Expected equity market to be closed on Sunday"
+ 
+    market_open_day = next_market_open_day()
+    open_hours = market_api.get_markets_hours(['equity', 'option', 'bond', 'future', 'forex'], market_open_day)
+    assert open_hours is not None, "Expected market hours to be fetched"
+    assert open_hours.equity is not None, "Expected equity hours to be fetched"
+    equity = open_hours.equity.get("EQ", None)
+    assert equity is not None, "Expected equity market hours to be fetched"
+    assert equity.is_open, "Expected equity market to be open"
+    assert open_hours.option is not None, "Expected option hours to be fetched"
+    assert open_hours.bond is not None, "Expected bond hours to be fetched"
+    assert open_hours.future is not None, "Expected future hours to be fetched"
+    assert open_hours.forex is not None, "Expected forex hours to be fetched"
 
 
 def check_exp_date_map(option_chain: OptionChain, field: str):
