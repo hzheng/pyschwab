@@ -439,3 +439,59 @@ class Transaction:
                 converted_data[dt_key] = datetime.fromisoformat(dt)
         converted_data['transfer_items'] = [TransferItem.from_dict(item) for item in converted_data['transfer_items']]
         return cls(**converted_data)
+
+
+@dataclass
+class Account:
+    account_number: str
+    primary_account: bool
+    type: str
+    nick_name: str
+    display_acct_id: str
+    auto_position_effect: bool
+    account_color: str
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'Account':
+        converted_data = {camel_to_snake(key): value for key, value in data.items()}
+        return cls(**converted_data)
+
+
+@dataclass
+class StreamerInfo:
+    streamer_socket_url: str
+    schwab_client_customer_id: str
+    schwab_client_correl_id: str
+    schwab_client_channel: str
+    schwab_client_function_id: str
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'StreamerInfo':
+        converted_data = {camel_to_snake(key): value for key, value in data.items()}
+        return cls(**converted_data)
+
+
+@dataclass
+class Offer:
+    level2_permissions: bool
+    mkt_data_permission: str
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'Offer':
+        converted_data = {camel_to_snake(key): value for key, value in data.items()}
+        return cls(**converted_data)
+
+
+@dataclass
+class UserPreference:
+    accounts: List[Account]
+    streamer_info: List[StreamerInfo]
+    offers: List[Offer]
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'Offer':
+        converted_data = {camel_to_snake(key): value for key, value in data.items()}
+        converted_data['accounts'] = [Account.from_dict(account) for account in converted_data['accounts']]
+        converted_data['streamer_info'] = [StreamerInfo.from_dict(streamer) for streamer in converted_data['streamer_info']]
+        converted_data['offers'] = [Offer.from_dict(offer) for offer in converted_data['offers']]
+        return cls(**converted_data)

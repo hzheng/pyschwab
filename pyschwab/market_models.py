@@ -413,3 +413,54 @@ class MarketHours:
             val = data.get(key, {})
             data[key] = {symbol: MarketProduct.from_dict(product) for symbol, product in val.items()}
         return cls(**data)
+
+
+@dataclass
+class Instrument:
+    """
+    Represents the financial instrument in market data.
+    
+    Attributes:
+        asset_type (str): The type of the asset, e.g., 'EQUITY'.
+        symbol (str): The trading symbol for the instrument.
+        cusip (str): The CUSIP identifier for the instrument.
+        exchange (str): The exchange of the instrument
+        description (str): The description of the instrument
+    """
+    asset_type: str
+    symbol: str
+    cusip: str
+    exchange: str
+    description: str
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'Instrument':
+        """
+        Create an instrument instance from a dictionary with camelCase keys.
+        """
+        if data is None:
+            return data
+
+        converted_data = {camel_to_snake(key): value for key, value in data.items()}
+        return cls(**converted_data)
+
+
+@dataclass
+class Screener:
+    symbol: str
+    description: str
+    last_price: float
+    volume: int
+    total_volume: int
+    net_change: float
+    net_percent_change: float
+    market_share: float
+    trades: int
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'Screener':
+        if data is None:
+            return data
+
+        converted_data = {camel_to_snake(key): value for key, value in data.items()}
+        return cls(**converted_data)

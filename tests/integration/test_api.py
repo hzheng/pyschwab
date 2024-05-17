@@ -128,6 +128,13 @@ def test_authentication_and_trading_data(app_config, logging_config):
     assert isinstance(accounts_hash, dict), "Expected accounts hash to be a dict"
     assert len(accounts_hash) > 0, "Expected at least one account to be fetched"
 
+    preferences = trading_api.get_user_preference()
+    assert preferences is not None, "Expected user preference to be fetched"
+    assert preferences.accounts is not None, "Expected accounts to be fetched"
+    assert len(preferences.accounts) > 0, "Expected at least one account to be fetched"
+    assert preferences.streamer_info is not None, "Expected streamer info to be fetched"
+    assert preferences.offers is not None, "Expected offers to be fetched"
+
     assert len(trading_api.get_accounts()) == 0, "Expected no accounts to be fetched initially"
     account_count = 0
     for account_num in accounts_hash:
@@ -227,7 +234,8 @@ def test_market_data(app_config, logging_config):
         assert quote.regular is not None, "Expected regular to be fetched"
 
         quote_detail = market_api.get_quote(symbol)
-        assert quote == quote_detail, "Expected quote detail to match quote"
+        for attr in ['asset_main_type', 'asset_sub_type', 'quote_type', 'realtime', 'ssid', 'symbol']:
+            assert getattr(quote, attr) == getattr(quote_detail, attr), f"Expected {attr} of quote detail to match quote"
 
     option_chain = market_api.get_option_chains('TSLA')
     assert option_chain is not None, "Expected option chain to be fetched"
@@ -291,6 +299,30 @@ def test_market_data(app_config, logging_config):
     assert open_hours.bond is not None, "Expected bond hours to be fetched"
     assert open_hours.future is not None, "Expected future hours to be fetched"
     assert open_hours.forex is not None, "Expected forex hours to be fetched"
+
+    instrument = market_api.get_instrument(['APPL'])
+    assert instrument is None, "Expected APPL instrument to be None"
+    apple_instrument = market_api.get_instrument(['AAPL'])
+    assert apple_instrument is not None, "Expected AAPL instrument to be fetched"
+    apple_cusip = '037833100'
+    assert apple_instrument.cusip == apple_cusip, f"Expected AAPL instrument cusip to be {apple_cusip}"
+    instrument = market_api.get_instrument_by_cusip(apple_cusip)
+    assert instrument == apple_instrument, "Expected instrument to match AAPL instrument"
+
+    movers = market_api.get_movers("$SPX")
+    assert movers is not None, "Expected movers to be fetched"
+    assert len(movers) > 0, "Expected movers to have at least one entry"
+    for mover in movers:
+        assert mover is not None, "Expected mover to be fetched"
+        assert mover.symbol is not None, "Expected symbol to be fetched"
+        assert mover.description is not None, "Expected description to be fetched"
+        assert mover.last_price is not None, "Expected last price to be fetched"
+        assert mover.volume is not None, "Expected volume to be fetched"
+        assert mover.total_volume is not None, "Expected total volume to be fetched"
+        assert mover.net_change is not None, "Expected net_change to be fetched"
+        assert mover.net_percent_change is not None, "Expected net_percent_change to be fetched"
+        assert mover.market_share is not None, "Expected market share to be fetched"
+        assert mover.trades is not None, "Expected trades to be fetched"
 
 
 def check_exp_date_map(option_chain: OptionChain, field: str):

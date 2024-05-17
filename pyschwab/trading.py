@@ -4,7 +4,7 @@ from typing import Any, Dict, List
 from dotenv import load_dotenv
 
 from .utils import format_params, request, time_to_str, to_json_str
-from .trading_models import Order, SecuritiesAccount, TradingData, Transaction
+from .trading_models import Order, SecuritiesAccount, TradingData, Transaction, UserPreference
 
 
 """
@@ -41,6 +41,10 @@ class TradingApi:
         if account_hash is None:
             raise ValueError(f"Account number {account_num} not found.")
         return account_hash
+    
+    def get_user_preference(self):
+        response = request(f'{self.base_trader_url}/userPreference', headers=self.auth).json()
+        return UserPreference.from_dict(response)
 
     def fetch_trading_data(self, account_num: str, include_pos: bool=True) -> TradingData:
         account_hash = self._get_account_hash(account_num)

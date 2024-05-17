@@ -3,7 +3,7 @@ from typing import Any, Dict, List
 
 from dotenv import load_dotenv
 
-from .market_models import MarketHours, OptionChain, OptionExpiration, PriceHistory, Quote
+from .market_models import Instrument, MarketHours, OptionChain, OptionExpiration, PriceHistory, Quote, Screener
 from .types import PeriodFrequency
 from .utils import format_list, format_params, request, time_to_int, time_to_str
 
@@ -70,3 +70,20 @@ class MarketApi:
         params = {'markets': markets, 'date': time_to_str(date, '%Y-%m-%d')}
         hours = request(f'{self.base_market_url}/markets', headers=self.auth, params=format_params(params)).json()
         return MarketHours.from_dict(hours)
+
+    def get_instrument(self, symbol: str, projection: str="symbol-search") -> Instrument:
+        params = {'symbol': symbol, 'projection': projection}
+        response = request(f'{self.base_market_url}/instruments', headers=self.auth, params=format_params(params)).json()
+        instruments = response.get('instruments', [None])
+        return Instrument.from_dict(instruments[0])
+
+    def get_instrument_by_cusip(self, cusip: str) -> Instrument:
+        response = request(f'{self.base_market_url}/instruments/{cusip}', headers=self.auth).json()
+        instruments = response.get('instruments', [None])
+        return Instrument.from_dict(instruments[0])
+
+    def get_movers(self, symbol: str, sort: str=None, frequency: int=0) -> List[Screener]:
+        params = {'sort': sort, 'frequency': frequency}
+        response = request(f'{self.base_market_url}/movers/{symbol}', headers=self.auth, params=format_params(params)).json()
+        screeners = response.get('screeners', [None])
+        return [Screener.from_dict(screener) for screener in screeners]
