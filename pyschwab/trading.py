@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 
 from .utils import format_params, request, time_to_str, to_json_str
 from .trading_models import Order, SecuritiesAccount, TradingData, Transaction, UserPreference
+from .types import OrderStatus, TransactionType
 
 
 """
@@ -67,7 +68,7 @@ class TradingApi:
             self.accounts[account_num] = account
         return trading_data_map
 
-    def get_all_orders(self, start_time: datetime=None, end_time: datetime=None, status=None, max_results: int=100) -> List[Order]:
+    def get_all_orders(self, start_time: datetime=None, end_time: datetime=None, status: OrderStatus=None, max_results: int=100) -> List[Order]:
         now = datetime.now()
         start = time_to_str(start_time or now - timedelta(days=30))
         end = time_to_str(end_time or now)
@@ -75,7 +76,7 @@ class TradingApi:
         orders = request(f'{self.base_trader_url}/orders', headers=self.auth, params=format_params(params)).json()
         return [Order.from_dict(order) for order in orders]
 
-    def get_orders(self, account_num: str, start_time: datetime=None, end_time: datetime=None, status=None, max_results: int=100) -> List[Order]:
+    def get_orders(self, account_num: str, start_time: datetime=None, end_time: datetime=None, status: OrderStatus=None, max_results: int=100) -> List[Order]:
         account_hash = self._get_account_hash(account_num)
         now = datetime.now()
         start = time_to_str(start_time or now - timedelta(days=30))
@@ -127,7 +128,7 @@ class TradingApi:
  
         raise ValueError("Order must be a dictionary or Order object.")
 
-    def get_transactions(self, account_num: str, start_time: datetime=None, end_time: datetime=None, symbol: str=None, types: str="TRADE") -> List[Transaction]:
+    def get_transactions(self, account_num: str, start_time: datetime=None, end_time: datetime=None, symbol: str=None, types: TransactionType=TransactionType.TRADE) -> List[Transaction]:
         account_hash = self._get_account_hash(account_num)
         now = datetime.now()
         start = time_to_str(start_time or now - timedelta(days=30))

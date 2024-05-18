@@ -1,3 +1,4 @@
+from enum import Enum, auto
 from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -93,3 +94,96 @@ class PeriodFrequency(BaseModel):
             if v not in valid_frequency:
                 raise ValueError(f'Invalid frequency for frequency_type {frequency_type}, must be one of: {valid_frequency}')
         return v
+
+
+class AutoName(Enum):
+    @staticmethod
+    def _generate_next_value_(name, start, count, last_values):
+        return name
+
+
+class AutoNameLower(Enum):
+    @staticmethod
+    def _generate_next_value_(name, start, count, last_values):
+        return name.lower().replace('_', '-')
+
+
+class OrderStatus(AutoName):
+    AWAITING_PARENT_ORDER = auto()
+    AWAITING_CONDITION = auto()
+    AWAITING_STOP_CONDITION = auto()
+    AWAITING_MANUAL_REVIEW = auto()
+    ACCEPTED = auto()
+    AWAITING_UR_OUT = auto()
+    PENDING_ACTIVATION = auto()
+    QUEUED = auto()
+    WORKING = auto()
+    REJECTED = auto()
+    PENDING_CANCEL = auto()
+    CANCELED = auto()
+    PENDING_REPLACE = auto()
+    REPLACED = auto()
+    FILLED = auto()
+    EXPIRED = auto()
+    NEW = auto()
+    AWAITING_RELEASE_TIME = auto()
+    PENDING_ACKNOWLEDGEMENT = auto()
+    PENDING_RECALL = auto()
+    UNKNOWN = auto()
+
+
+class TransactionType(AutoName):
+    TRADE = auto()
+    RECEIVE_AND_DELIVER = auto()
+    DIVIDEND_OR_INTEREST = auto()
+    ACH_RECEIPT = auto()
+    ACH_DISBURSEMENT = auto()
+    CASH_RECEIPT = auto()
+    CASH_DISBURSEMENT = auto()
+    ELECTRONIC_FUND = auto()
+    WIRE_OUT = auto()
+    WIRE_IN = auto()
+    JOURNAL = auto()
+    MEMORANDUM = auto()
+    MARGIN_CALL = auto()
+    MONEY_MARKET = auto()
+    SMA_ADJUSTMENT = auto()
+
+
+class SecuritySearch(AutoNameLower):
+    SYMBOL_SEARCH = auto()
+    SYMBOL_REGEX = auto()
+    DESC_SEARCH = auto()
+    DESC_REGEX = auto()
+    SEARCH = auto()
+    FUNDAMENTAL = auto()
+
+
+class MarketType(AutoNameLower):
+    EQUITY = auto()
+    OPTION = auto()
+    BOND= auto()
+    FUTURE = auto()
+    FOREX = auto()
+
+
+class OptionStrategy(AutoName):
+    SINGLE = auto()
+    ANALYTICAL = auto()
+    COVERED = auto()
+    VERTICAL = auto()
+    CALENDAR = auto()
+    STRANGLE = auto()
+    STRADDLE = auto()
+    BUTTERFLY = auto()
+    CONDOR = auto()
+    DIAGONAL = auto()
+    COLLAR = auto()
+    ROLL = auto()
+
+
+class MoverSort(AutoName):
+    VOLUME = auto()
+    TRADES = auto()
+    PERCENT_CHANGE_UP = auto()
+    PERCENT_CHANGE_DOWN = auto()

@@ -2,6 +2,7 @@ import json
 import os
 import re
 from datetime import datetime, date, timedelta, UTC
+from enum import Enum
 from typing import Any, Dict, List
 
 import holidays
@@ -135,6 +136,19 @@ def next_market_open_day():
         next_day += timedelta(days=1)
 
 
+def format_param(param: Any) -> str | List[str]:
+    if param is None:
+        return ""
+
+    if isinstance(param, Enum):
+        return param.value
+
+    if isinstance(param, list):
+        return [format_param(p) for p in param]
+
+    return str(param)
+
+
 def format_params(params: Dict[str, Any]) -> Dict[str, Any]:
     """Removes all key-value pairs from a dictionary where the value is None.
 
@@ -144,7 +158,7 @@ def format_params(params: Dict[str, Any]) -> Dict[str, Any]:
     Returns:
     Dict[str, Any]: The dictionary with None values removed.
     """
-    return {key: value for key, value in params.items() if value is not None}
+    return {key: format_param(value) for key, value in params.items() if value is not None}
 
 
 def format_list(lst: str | List) -> str:
@@ -163,7 +177,6 @@ def to_json_str(obj):
         return obj 
 
     return json.dumps(obj, default=json_encode)
-
 
 def request(url, method='GET', headers=None, params=None, data=None, json=None) -> requests.Response:
     try:

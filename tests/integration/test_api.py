@@ -8,9 +8,10 @@ import yaml
 from pyschwab.auth import Authorizer
 from pyschwab.log import logger
 from pyschwab.market import MarketApi
-from pyschwab.market_models import OptionChain, OptionDetail
+from pyschwab.market_models import OptionChain
 from pyschwab.trading import TradingApi
 from pyschwab.trading_models import Order, TradingData
+from pyschwab.types import MarketType, MoverSort, OrderStatus, SecuritySearch
 from pyschwab.utils import is_subset_object, next_market_open_day, next_sunday
 
 
@@ -177,7 +178,7 @@ def test_authentication_and_trading_data(app_config, logging_config):
         orders = trading_api.get_orders(account_num)
         check_orders(trading_api, orders)
 
-    orders = trading_api.get_all_orders()
+    orders = trading_api.get_all_orders(status=OrderStatus.FILLED)
     check_orders(trading_api, orders)
 
     if not test_account_number or not test_order_type: # no order placement, change, cancellation, or preview
@@ -281,7 +282,7 @@ def test_market_data(app_config, logging_config):
         assert candle.volume is not None, "Expected volume to be fetched"
 
     sunday = next_sunday()
-    sunday_hours = market_api.get_market_hours('equity', sunday)
+    sunday_hours = market_api.get_market_hours(MarketType.EQUITY, sunday)
     assert sunday_hours is not None, "Expected market hours to be fetched"
     assert sunday_hours.equity is not None, "Expected equity hours to be fetched"
     equity = sunday_hours.equity.get("equity", None)
@@ -289,29 +290,29 @@ def test_market_data(app_config, logging_config):
     assert not equity.is_open, "Expected equity market to be closed on Sunday"
  
     market_open_day = next_market_open_day()
-    open_hours = market_api.get_markets_hours(['equity', 'option', 'bond', 'future', 'forex'], market_open_day)
+    open_hours = market_api.get_markets_hours([MarketType.EQUITY, MarketType.OPTION, MarketType.BOND, MarketType.FUTURE, MarketType.FOREX], market_open_day)
     assert open_hours is not None, "Expected market hours to be fetched"
     assert open_hours.equity is not None, "Expected equity hours to be fetched"
     equity = open_hours.equity.get("EQ", None)
     assert equity is not None, "Expected equity market hours to be fetched"
     assert equity.is_open, "Expected equity market to be open"
-    assert open_hours.option is not None, "Expected option hours to be fetched"
-    assert open_hours.bond is not None, "Expected bond hours to be fetched"
-    assert open_hours.future is not None, "Expected future hours to be fetched"
-    assert open_hours.forex is not None, "Expected forex hours to be fetched"
+    assert len(open_hours.option) > 0, "Expected option hours to be fetched"
+    assert len(open_hours.bond) > 0, "Expected bond hours to be fetched"
+    assert len(open_hours.future) > 0, "Expected future hours to be fetched"
+    assert len(open_hours.forex) > 0, "Expected forex hours to be fetched"
 
-    instrument = market_api.get_instrument(['APPL'])
-    assert instrument is None, "Expected APPL instrument to be None"
-    apple_instrument = market_api.get_instrument(['AAPL'])
+    instrument = market_api.get_instrument('APPL')
+    assert instrument is None, "Expected APPL instrument to be None" #no such symbol
+    apple_instrument = market_api.get_instrument('AAPL', SecuritySearch.SEARCH)
     assert apple_instrument is not None, "Expected AAPL instrument to be fetched"
     apple_cusip = '037833100'
     assert apple_instrument.cusip == apple_cusip, f"Expected AAPL instrument cusip to be {apple_cusip}"
     instrument = market_api.get_instrument_by_cusip(apple_cusip)
     assert instrument == apple_instrument, "Expected instrument to match AAPL instrument"
 
-    movers = market_api.get_movers("$SPX")
+    movers = market_api.get_movers("$SPX", MoverSort.PERCENT_CHANGE_UP, 10)
     assert movers is not None, "Expected movers to be fetched"
-    assert len(movers) > 0, "Expected movers to have at least one entry"
+    # assert len(movers) > 0, "Expected movers to have at least one entry" #TODO: result might be empty
     for mover in movers:
         assert mover is not None, "Expected mover to be fetched"
         assert mover.symbol is not None, "Expected symbol to be fetched"
