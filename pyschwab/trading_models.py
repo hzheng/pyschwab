@@ -45,22 +45,26 @@ class Deliverable:
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'Deliverable':
+        if data is None:
+            return None
         converted_data = {camel_to_snake(key): value for key, value in data.items()}
         return cls(**converted_data)
 
 
 @dataclass
 class OptionDeliverable:
-    root_symbol: str
-    strike_percent: int
-    deliverable_number: int
     deliverable_units: float
     deliverable: Deliverable
+    root_symbol: str = None
+    symbol: str = None
+    strike_percent: int = None
+    deliverable_number: int = None
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'OptionDeliverable':
         converted_data = {camel_to_snake(key): value for key, value in data.items()}
-        converted_data['deliverable'] = Deliverable.from_dict(converted_data['deliverable'])
+        deliverable = converted_data.get('deliverable', None)
+        converted_data['deliverable'] = Deliverable.from_dict(deliverable)
         return cls(**converted_data)
 
 
@@ -417,13 +421,13 @@ class Transaction:
     time: datetime
     type: str
     status: str
-    position_id: int
     net_amount: float
     account_number: str
     sub_account: str
     transfer_items: List[TransferItem]
     user: User = None
-    order_id: int = 0
+    order_id: int = None
+    position_id: int = None
     trade_date: datetime = None
     settlement_date: datetime = None
     description: str = None
