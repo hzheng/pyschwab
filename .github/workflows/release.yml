@@ -21,7 +21,10 @@ jobs:
     - name: Install Poetry
       run: |
         curl -sSL https://install.python-poetry.org | python3 -
-        echo "::add-path::$HOME/.local/bin"
+      env:
+        POETRY_HOME: ${{ runner.temp }}/poetry
+    - name: Add Poetry to PATH
+      run: echo "${{ runner.temp }}/poetry/bin" >> $GITHUB_PATH
 
     - name: Install dependencies
       run: poetry install
@@ -33,4 +36,3 @@ jobs:
       env:
         PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
       run: poetry publish --username __token__ --password $PYPI_TOKEN --no-interaction
-
