@@ -7,7 +7,7 @@ auth:
     callback_url: $CALLBACK_URL
 
   token:
-    token_path: config/tokens.json
+    token_path: tokens.json
     refresh_token_expires_in_sec: 604800 # 7 days
     access_token_expires_in_sec: 1800
 

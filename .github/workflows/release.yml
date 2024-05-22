@@ -1,0 +1,36 @@
+name: Publish to PyPI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.11'
+
+    - name: Install Poetry
+      run: |
+        curl -sSL https://install.python-poetry.org | python3 -
+        echo "::add-path::$HOME/.local/bin"
+
+    - name: Install dependencies
+      run: poetry install
+
+    - name: Build the package
+      run: poetry build
+
+    - name: Publish to PyPI
+      env:
+        PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+      run: poetry publish --username __token__ --password $PYPI_TOKEN --no-interaction
+

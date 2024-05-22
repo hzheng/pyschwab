@@ -1,0 +1,4 @@
+APP_KEY=replace_with_your_app_key
+APP_SECRET=replace_with_your_app_secret
+CALLBACK_URL=https://127.0.0.1
+

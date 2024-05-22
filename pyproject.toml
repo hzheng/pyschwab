@@ -1,21 +1,37 @@
 [tool.poetry]
 name = "pyschwab"
-version = "0.0.1"
+version = "0.0.1a2"
 description = "A Python library for the Schwab trading API"
 authors = ["Hui Zheng <xyz.dll@gmail.com>"]
 license = "MIT"
 readme = "README.md"
+repository = "https://github.com/hzheng/pyschwab"
+documentation = "https://pyschwab.readthedocs.io"
+keywords = ["finance", "trading", "schwab", "api", "python"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Office/Business :: Financial",
+]
 
 [tool.poetry.dependencies]
 python = "^3.11"
-pytest = "^8.2.0"
 pyyaml = "^6.0.1"
 python-dotenv = "^1.0.1"
 requests = "^2.31.0"
 pydantic = "^2.7.1"
 holidays = "^0.48"
 
+[tool.poetry.dev-dependencies]
+pytest = "^8.2.0"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.urls]
+"Homepage" = "https://github.com/hzheng/pyschwab"
