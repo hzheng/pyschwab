@@ -37,6 +37,8 @@ def dataclass_to_dict(instance):
     """
     if instance is None:
         return instance
+    if isinstance(instance, Enum):
+        return instance.value
     if isinstance(instance, list):
         return [dataclass_to_dict(item) for item in instance]
     if not hasattr(instance, '__dataclass_fields__'):

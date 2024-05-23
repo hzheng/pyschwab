@@ -102,7 +102,7 @@ def check_orders(trading_api: TradingApi, orders: List[Order]):
                 assert leg.time is not None, "Expected time to be fetched"
                 assert isinstance(leg.time, datetime), "Expected execution leg time to be a datetime"
 
-        detailed_order = trading_api.get_order(order.account_number, order.order_id)
+        detailed_order = trading_api.get_order(order.order_id, order.account_number)
         assert detailed_order == order, "Expected detailed order to match order"
 
 
@@ -140,7 +140,8 @@ def test_authentication_and_trading_data(app_config, logging_config):
     account_count = 0
     for account_num in accounts_hash:
         assert len(account_num) > 0, "Expected a non-empty account number to be fetched"
-        trading_data = trading_api.fetch_trading_data(account_num)
+        trading_api.set_current_account_number(account_num)
+        trading_data = trading_api.fetch_trading_data()
         check_trading_data(trading_data)
         account_count += 1
         assert len(trading_api.get_accounts()) == account_count, f"Expected {account_count} account(s)"
@@ -152,7 +153,8 @@ def test_authentication_and_trading_data(app_config, logging_config):
         check_trading_data(trading_data)
 
     for account_num in accounts_hash:
-        transactions = trading_api.get_transactions(account_num)
+        trading_api.set_current_account_number(account_num)
+        transactions = trading_api.get_transactions()
         for transaction in transactions:
             assert transaction is not None, "Expected transaction to be fetched"
             assert transaction.activity_id is not None, "Expected activity id to be fetched"
@@ -172,10 +174,10 @@ def test_authentication_and_trading_data(app_config, logging_config):
                 assert transfer_item.cost is not None, "Expected cost to be fetched"
                 assert transfer_item.price is not None, "Expected price to be fetched"
 
-            transaction_detail = trading_api.get_transaction(account_num, transaction.activity_id) 
+            transaction_detail = trading_api.get_transaction(transaction.activity_id) 
             assert transaction_detail == transaction, "Expected transaction detail to match transaction"
 
-        orders = trading_api.get_orders(account_num)
+        orders = trading_api.get_orders()
         check_orders(trading_api, orders)
 
     orders = trading_api.get_all_orders(status=OrderStatus.FILLED)
@@ -184,25 +186,27 @@ def test_authentication_and_trading_data(app_config, logging_config):
     if not test_account_number or not test_order_type: # no order placement, change, cancellation, or preview
         return
 
+    trading_api.set_current_account_number(test_account_number)
     if test_order_type == 'place_dict':
         print("Testing place order by order dict")
-        trading_api.place_order(order_dict, test_account_number)
+        trading_api.place_order(order_dict)
     elif test_order_type == 'place_obj':
         print("Testing place order by order obj")
         order = Order.from_dict(order_dict)
-        trading_api.place_order(order, test_account_number)
+        trading_api.place_order(order)
     else:
         for order in orders:
             leg = order.order_leg_collection[0]
             if leg.instrument.symbol == 'TSLA':
                 if test_order_type == 'cancel':
                     print("Testing cancel order")
-                    trading_api.cancel_order(test_order_id, test_account_number)
+                    trading_api.cancel_order(test_order_id)
                 elif test_order_type == 'replace':
                     print("Testing replace order")
                     order.order_id = test_order_id
                     order.price = 102
-                    order.quantity = 2
+                    # order.quantity = 2
+                    order.order_leg_collection[0].quantity = 2
                     trading_api.replace_order(order)
                 break
 

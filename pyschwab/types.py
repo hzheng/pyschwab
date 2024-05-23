@@ -1,5 +1,5 @@
 from enum import Enum, auto
-from typing import Optional
+from typing import Optional, Type, TypeVar
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -96,16 +96,156 @@ class PeriodFrequency(BaseModel):
         return v
 
 
+T = TypeVar('T', bound='AutoName')
+
+
 class AutoName(Enum):
     @staticmethod
     def _generate_next_value_(name, start, count, last_values):
         return name
+
+    @classmethod
+    def from_str(cls: Type[T], s: str | T) -> T:
+        if s is None or isinstance(s, cls):
+            return s
+        try:
+            return cls[s]
+        except KeyError:
+            raise ValueError(f"{s} is not a valid {cls.__name__}")
 
 
 class AutoNameLower(Enum):
     @staticmethod
     def _generate_next_value_(name, start, count, last_values):
         return name.lower().replace('_', '-')
+
+
+class MarketSession(AutoName):
+    NORMAL = auto()
+    AM = auto()
+    PM = auto()
+    SEAMLESS = auto()
+
+
+class OrderType(AutoName):
+    MARKET = auto()
+    LIMIT = auto()
+    STOP = auto()
+    STOP_LIMIT = auto()
+    TRAILING_STOP = auto()
+    CABINET = auto()
+    NON_MARKETABLE = auto()
+    MARKET_ON_CLOSE = auto()
+    EXERCISE = auto()
+    TRAILING_STOP_LIMIT = auto()
+    NET_DEBIT = auto()
+    NET_CREDIT = auto()
+    NET_ZERO = auto()
+    LIMIT_ON_CLOSE = auto()
+    UNKNOWN = auto()
+
+
+class OrderInstruction(AutoName):
+    BUY = auto()
+    SELL = auto()
+    BUY_TO_COVER = auto()
+    SELL_SHORT = auto()
+    BUY_TO_OPEN = auto()
+    BUY_TO_CLOSE = auto()
+    SELL_TO_OPEN = auto()
+    SELL_TO_CLOSE = auto()
+    EXCHANGE = auto()
+    SELL_SHORT_EXEMPT = auto()
+
+
+class OrderDuration(AutoName):
+    DAY = auto()
+    GOOD_TILL_CANCEL = auto()
+    FILL_OR_KILL = auto()
+    IMMEDIATE_OR_CANCEL = auto()
+    END_OF_WEEK = auto()
+    END_OF_MONTH = auto()
+    NEXT_END_OF_MONTH = auto()
+    UNKNOWN = auto
+
+
+class OrderStrategyType(AutoName):
+    SINGLE = auto()
+    CANCEL = auto()
+    RECALL = auto()
+    PAIR = auto()
+    FLATTEN = auto()
+    TWO_DAY_SWAP = auto()
+    BLAST_ALL = auto()
+    OCO = auto()
+    TRIGGER = auto()
+
+
+class ComplexOrderStrategyType(AutoName):
+    NONE = auto()
+    COVERED = auto()
+    VERTICAL = auto()
+    BACK_RATIO = auto()
+    CALENDAR = auto()
+    DIAGONAL = auto()
+    STRADDLE = auto()
+    STRANGLE = auto()
+    COLLAR_SYNTHETIC = auto()
+    BUTTERFLY = auto()
+    CONDOR = auto()
+    IRON_CONDOR = auto()
+    VERTICAL_ROLL = auto()
+    COLLAR_WITH_STOCK = auto()
+    DOUBLE_DIAGONAL = auto()
+    UNBALANCED_BUTTERFLY = auto()
+    UNBALANCED_CONDOR = auto()
+    UNBALANCED_IRON_CONDOR = auto()
+    UNBALANCED_VERTICAL_ROLL = auto()
+    MUTUAL_FUND_SWAP = auto()
+    CUSTOM = auto()
+
+
+class PositionEffect(AutoName):
+    OPENING = auto()
+    CLOSING = auto()
+    AUTOMATIC = auto()
+
+
+class QuantityType(AutoName):
+    ALL_SHARES = auto()
+    DOLLARS = auto()
+    SHARES = auto()
+
+
+class AssetType(AutoName):
+    EQUITY = auto()
+    OPTION = auto()
+    INDEX = auto()
+    MUTUAL_FUND = auto()
+    CASH_EQUIVALENT = auto()
+    FIXED_INCOME = auto()
+    CURRENCY = auto()
+    COLLECTIVE_INVESTMENT = auto()
+
+
+class OptionAssetType(AutoName):
+    EQUITY = AssetType.EQUITY.value
+    OPTION = AssetType.OPTION.value
+    INDEX = AssetType.INDEX.value
+    MUTUAL_FUND = AssetType.MUTUAL_FUND.value
+    CASH_EQUIVALENT = AssetType.CASH_EQUIVALENT.value
+    FIXED_INCOME = AssetType.FIXED_INCOME.value
+    CURRENCY = AssetType.CURRENCY.value
+    COLLECTIVE_INVESTMENT = AssetType.COLLECTIVE_INVESTMENT.value
+    FUTURE = auto()
+    FOREX = auto()
+    PRODUCT = auto()
+
+
+class OptionActionType(AutoName):
+    PUT = auto()
+    CALL = auto()
+    UNKNOWN = auto()
 
 
 class OrderStatus(AutoName):
@@ -130,6 +270,21 @@ class OrderStatus(AutoName):
     PENDING_ACKNOWLEDGEMENT = auto()
     PENDING_RECALL = auto()
     UNKNOWN = auto()
+
+
+class RequestedDestination(AutoName):
+    INET = auto()
+    ECN_ARCA = auto()
+    CBOE = auto()
+    AMEX = auto()
+    PHLX = auto()
+    ISE = auto()
+    BOX = auto()
+    NYSE = auto()
+    NASDAQ = auto()
+    BATS = auto()
+    C2 = auto()
+    AUTO = auto()
 
 
 class TransactionType(AutoName):

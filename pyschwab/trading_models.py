@@ -2,6 +2,9 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
+from .types import AssetType, ComplexOrderStrategyType, MarketSession, OptionActionType, \
+    OptionAssetType, OrderDuration, OrderInstruction, OrderStatus, OrderStrategyType, OrderType, \
+    PositionEffect, QuantityType, RequestedDestination
 from .utils import camel_to_snake, dataclass_to_dict, to_time
 
 
@@ -36,7 +39,7 @@ class SecuritiesAccount:
 
 @dataclass
 class Deliverable:
-    asset_type: str
+    asset_type: OptionAssetType
     status: str
     symbol: str
     instrument_id: int
@@ -48,6 +51,7 @@ class Deliverable:
         if data is None:
             return None
         converted_data = {camel_to_snake(key): value for key, value in data.items()}
+        converted_data['asset_type'] = OptionAssetType.from_str(converted_data['asset_type'])
         return cls(**converted_data)
 
 
@@ -74,14 +78,14 @@ class Instrument:
     Represents the financial instrument in a trading position.
     
     Attributes:
-        asset_type (str): The type of the asset, e.g., 'EQUITY'.
+        asset_type (AssetType): The type of the asset, e.g., AssetType.EQUITY.
         symbol (str): The trading symbol for the instrument.
         cusip (str): The CUSIP identifier for the instrument.
         net_change (float): The net change in the instrument's value since the last close.
         instrument_id (int): The id of the instrument
     """
-    asset_type: str
     symbol: str
+    asset_type: AssetType = AssetType.EQUITY
     cusip: str = None
     net_change: float = 0.0
     instrument_id: int = 0
@@ -92,7 +96,7 @@ class Instrument:
     expiration_date: datetime = None
     option_deliverables: List[Deliverable] = None
     option_premium_multiplier: float = 0.0
-    put_call: str = None
+    put_call: OptionActionType = OptionActionType.CALL
     strike_price: float = None
     underlying_symbol: str = None
     underlying_cusip: str = None
@@ -109,6 +113,8 @@ class Instrument:
         deliverables = converted_data.get('option_deliverables', None)
         if deliverables:
             converted_data['option_deliverables'] = [OptionDeliverable.from_dict(deliverable) for deliverable in converted_data['option_deliverables']]
+        converted_data['asset_type'] = AssetType.from_str(converted_data['asset_type'])
+        converted_data['put_call'] = OptionActionType.from_str(converted_data.get('put_call', None))
         return cls(**converted_data)
 
 
@@ -302,12 +308,12 @@ class OrderActivity:
 @dataclass
 class OrderLeg:
     instrument: Instrument
-    instruction: str
+    instruction: OrderInstruction
     quantity: int
-    position_effect: str = 'OPENING'
-    order_leg_type: str = 'EQUITY'
-    leg_id: int = 0
-    quantity_type: str = None
+    position_effect: PositionEffect = PositionEffect.OPENING
+    order_leg_type: AssetType = AssetType.EQUITY
+    quantity_type: QuantityType = QuantityType.ALL_SHARES
+    leg_id: int = None
     div_cap_gains: str = None
     to_symbol: str = None
 
@@ -315,26 +321,31 @@ class OrderLeg:
     def from_dict(cls, data: Dict[str, Any]) -> 'OrderLeg':
         converted_data = {camel_to_snake(key): value for key, value in data.items()}
         converted_data['instrument'] = Instrument.from_dict(converted_data['instrument'])
+        converted_data['instruction'] = OrderInstruction.from_str(converted_data['instruction'])
+        converted_data['position_effect'] = PositionEffect.from_str(converted_data.get('position_effect', None))
+        converted_data['order_leg_type'] = AssetType.from_str(converted_data.get('order_leg_type', None))
+        converted_data['quantity_type'] = QuantityType.from_str(converted_data.get('quantity_type', None))
         return cls(**converted_data)
 
 
 @dataclass
 class Order:
-    order_type: str
-    session: str
     price: float
-    duration: str
     entered_time: datetime
     close_time: datetime
     release_time: datetime
+    order_type: OrderType = OrderType.LIMIT
+    duration: OrderDuration = OrderDuration.DAY
+    session: MarketSession = MarketSession.NORMAL
+    order_strategy_type: OrderStrategyType = OrderStrategyType.SINGLE
     order_id: int = 0
     account_number: int = 0
-    status: str = 'AWAITING_PARENT_ORDER'
+    status: OrderStatus = OrderStatus.AWAITING_PARENT_ORDER
     quantity: int = 0
     filled_quantity: int = 0
     remaining_quantity: int = 0
-    complex_order_strategy_type: str = "NONE"
-    requested_destination: str = "AUTO"
+    complex_order_strategy_type: ComplexOrderStrategyType = ComplexOrderStrategyType.NONE
+    requested_destination: RequestedDestination = RequestedDestination.AUTO
     destination_link_name: str = None
     order_leg_collection: List[OrderLeg] = None
     order_activity_collection: List[OrderActivity] = None
@@ -348,7 +359,6 @@ class Order:
     tax_lot_method: str = None
     activation_price: float = 0.0
     special_instruction: str = None
-    order_strategy_type: str = None
     cancelable: bool = False
     editable: bool = False
     cancel_time: datetime = None
@@ -362,6 +372,12 @@ class Order:
             converted_data[key] = to_time(converted_data.get(key, None))
         converted_data['order_leg_collection'] = [OrderLeg.from_dict(leg) for leg in converted_data.get('order_leg_collection', [])]
         converted_data['order_activity_collection'] = [OrderActivity.from_dict(activity) for activity in converted_data.get('order_activity_collection', [])]
+        converted_data['order_type'] = OrderType.from_str(converted_data['order_type'])
+        converted_data['duration'] = OrderDuration.from_str(converted_data['duration'])
+        converted_data['session'] = MarketSession.from_str(converted_data['session'])
+        converted_data['order_strategy_type'] = OrderStrategyType.from_str(converted_data['order_strategy_type'])
+        converted_data['status'] = OrderStatus.from_str(converted_data.get('status', None))
+        converted_data['complex_order_strategy_type'] = ComplexOrderStrategyType.from_str(converted_data.get('complex_order_strategy_type', None))
         return cls(**converted_data)
 
     def to_dict(self, clean_keys: bool=False) -> Dict[str, Any]:
@@ -374,6 +390,7 @@ class Order:
                         'destinationLinkName', 'requestedDestination', # destination
                         'status', 'statusDescription', # status
                         'tag', # tag
+                        'orderActivityCollection',
                         ]:
                 del order_dict[key]
         return order_dict
