@@ -169,6 +169,34 @@ def format_list(lst: str | List) -> str:
 
     return ",".join(lst)
 
+def remove_none_values(data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Recursively remove all keys with None values from the dictionary.
+
+    Args:
+    data (dict): The dictionary to clean.
+
+    Returns:
+    dict: The cleaned dictionary with no None values.
+    """
+    if not isinstance(data, dict):
+        return data
+
+    clean_dict = {}
+    for key, value in data.items():
+        if isinstance(value, dict):
+            nested_clean_dict = remove_none_values(value)
+            if nested_clean_dict:  # only add non-empty nested dictionaries
+                clean_dict[key] = nested_clean_dict
+        elif isinstance(value, list):
+            clean_list = [remove_none_values(item) for item in value]
+            if clean_list:  # only add non-empty lists
+                clean_dict[key] = clean_list
+        elif value is not None:
+            clean_dict[key] = value
+
+    return clean_dict
+
 
 def to_json_str(obj):
     def json_encode(obj):

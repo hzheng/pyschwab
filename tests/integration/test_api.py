@@ -114,8 +114,9 @@ order_dict = {
     }
 
 test_account_number = 0 # CHANGE this to actual account number
-test_order_id = 0 # CHANGE this to actual order id
-test_order_type = [None, 'place_dict', 'place_obj', 'replace', 'cancel', 'preview'][0] # choose to test place order(dict/obj), replace, cancel, preview, or None
+ # choose to test different order types: place_dict, place_obj, buy_equity, replace, cancel, preview
+ # WARNING: some options might place or replace an actual order
+test_order_type = [None, 'place_dict', 'place_obj', 'buy_equity', 'replace', 'cancel', 'preview'][0]
 
 
 @pytest.mark.integration
@@ -180,7 +181,7 @@ def test_authentication_and_trading_data(app_config, logging_config):
         orders = trading_api.get_orders()
         check_orders(trading_api, orders)
 
-    orders = trading_api.get_all_orders(status=OrderStatus.FILLED)
+    orders = trading_api.get_all_orders(status=OrderStatus.FILLED, max_results=10)
     check_orders(trading_api, orders)
 
     if not test_account_number or not test_order_type: # no order placement, change, cancellation, or preview
@@ -194,21 +195,26 @@ def test_authentication_and_trading_data(app_config, logging_config):
         print("Testing place order by order obj")
         order = Order.from_dict(order_dict)
         trading_api.place_order(order)
+    elif test_order_type == 'buy_equity':
+        print("Testing buy equity")
+        trading_api.buy_equity("TSLA", quantity=1, price=100)
     else:
-        for order in orders:
-            leg = order.order_leg_collection[0]
-            if leg.instrument.symbol == 'TSLA':
-                if test_order_type == 'cancel':
-                    print("Testing cancel order")
-                    trading_api.cancel_order(test_order_id)
-                elif test_order_type == 'replace':
-                    print("Testing replace order")
-                    order.order_id = test_order_id
-                    order.price = 102
-                    # order.quantity = 2
-                    order.order_leg_collection[0].quantity = 2
-                    trading_api.replace_order(order)
-                break
+        orders = trading_api.get_working_orders()
+        if len(orders) == 0:
+            print("No working order to test replace or cancel")
+        else:
+            order = orders[0]
+            order_id = order.order_id
+            if test_order_type == 'cancel':
+                print("Testing cancel order with id=", order_id)
+                trading_api.cancel_order(order_id)
+            elif test_order_type == 'replace':
+                order.price -= 0.1
+                cur_qty = order.order_leg_collection[0].quantity
+                qty = 2 if cur_qty == 1 else 1 # keep quantity small and avoid replacing with the same quantity
+                order.order_leg_collection[0].quantity = qty
+                print("Testing replace order with id=", order_id, " with new price =", order.price, " and quantity =", qty)
+                trading_api.replace_order(order)
 
 
 def test_order_json():

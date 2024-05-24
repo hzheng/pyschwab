@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from .types import AssetType, ComplexOrderStrategyType, MarketSession, OptionActionType, \
+from .types import ActivityType, AssetType, ComplexOrderStrategyType, ExecutionType, MarketSession, OptionActionType, \
     OptionAssetType, OrderDuration, OrderInstruction, OrderStatus, OrderStrategyType, OrderType, \
     PositionEffect, QuantityType, RequestedDestination
 from .utils import camel_to_snake, dataclass_to_dict, to_time
@@ -87,16 +87,16 @@ class Instrument:
     symbol: str
     asset_type: AssetType = AssetType.EQUITY
     cusip: str = None
-    net_change: float = 0.0
-    instrument_id: int = 0
+    net_change: float = None
+    instrument_id: int = None
     description: str = None
-    closing_price: float = 0.0
+    closing_price: float = None
     status: str = None
     type: str = None
     expiration_date: datetime = None
     option_deliverables: List[Deliverable] = None
-    option_premium_multiplier: float = 0.0
-    put_call: OptionActionType = OptionActionType.CALL
+    option_premium_multiplier: float = None
+    put_call: OptionActionType = None
     strike_price: float = None
     underlying_symbol: str = None
     underlying_cusip: str = None
@@ -292,8 +292,8 @@ class ExecutionLeg:
 
 @dataclass
 class OrderActivity:
-    activity_type: str
-    execution_type: str
+    activity_type: ActivityType
+    execution_type: ExecutionType
     quantity: int
     order_remaining_quantity: int
     execution_legs: List[ExecutionLeg]
@@ -301,6 +301,8 @@ class OrderActivity:
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'OrderActivity':
         converted_data = {camel_to_snake(key): value for key, value in data.items()}
+        converted_data['activity_type'] = ActivityType.from_str(converted_data.get('activity_type', None))
+        converted_data['execution_type'] = ExecutionType.from_str(converted_data.get('execution_type', None))
         converted_data['execution_legs'] = [ExecutionLeg.from_dict(leg) for leg in converted_data['execution_legs']]
         return cls(**converted_data)
 
@@ -310,9 +312,9 @@ class OrderLeg:
     instrument: Instrument
     instruction: OrderInstruction
     quantity: int
-    position_effect: PositionEffect = PositionEffect.OPENING
-    order_leg_type: AssetType = AssetType.EQUITY
-    quantity_type: QuantityType = QuantityType.ALL_SHARES
+    position_effect: PositionEffect = None
+    order_leg_type: AssetType = None
+    quantity_type: QuantityType = None
     leg_id: int = None
     div_cap_gains: str = None
     to_symbol: str = None
@@ -331,25 +333,25 @@ class OrderLeg:
 @dataclass
 class Order:
     price: float
-    entered_time: datetime
-    close_time: datetime
-    release_time: datetime
+    entered_time: datetime = None
+    close_time: datetime = None
+    release_time: datetime = None
     order_type: OrderType = OrderType.LIMIT
     duration: OrderDuration = OrderDuration.DAY
     session: MarketSession = MarketSession.NORMAL
     order_strategy_type: OrderStrategyType = OrderStrategyType.SINGLE
-    order_id: int = 0
-    account_number: int = 0
-    status: OrderStatus = OrderStatus.AWAITING_PARENT_ORDER
-    quantity: int = 0
-    filled_quantity: int = 0
-    remaining_quantity: int = 0
-    complex_order_strategy_type: ComplexOrderStrategyType = ComplexOrderStrategyType.NONE
-    requested_destination: RequestedDestination = RequestedDestination.AUTO
+    order_id: int = None
+    account_number: int = None
+    status: OrderStatus = None
+    quantity: int = None
+    filled_quantity: int = None
+    remaining_quantity: int = None
+    complex_order_strategy_type: ComplexOrderStrategyType = None
+    requested_destination: RequestedDestination = None
     destination_link_name: str = None
     order_leg_collection: List[OrderLeg] = None
     order_activity_collection: List[OrderActivity] = None
-    stop_price: float = 0.0
+    stop_price: float = None
     stop_price_link_basis: str = None
     stop_price_link_type: str = None
     stop_price_offset: float = None
@@ -357,10 +359,10 @@ class Order:
     price_link_basis: str = None
     price_link_type: str = None
     tax_lot_method: str = None
-    activation_price: float = 0.0
+    activation_price: float = None
     special_instruction: str = None
-    cancelable: bool = False
-    editable: bool = False
+    cancelable: bool = None
+    editable: bool = None
     cancel_time: datetime = None
     tag: str = None
     status_description: str = None

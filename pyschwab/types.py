@@ -271,6 +271,9 @@ class OrderStatus(AutoName):
     PENDING_RECALL = auto()
     UNKNOWN = auto()
 
+    def is_inactive(self):
+        return self in [OrderStatus.CANCELED, OrderStatus.REJECTED, OrderStatus.EXPIRED, OrderStatus.FILLED]
+
 
 class RequestedDestination(AutoName):
     INET = auto()
@@ -335,6 +338,16 @@ class OptionStrategy(AutoName):
     DIAGONAL = auto()
     COLLAR = auto()
     ROLL = auto()
+
+
+class ActivityType(AutoName):
+    EXECUTION = auto()
+    ORDER_ACTION = auto()
+
+
+class ExecutionType(AutoName):
+    FILL = auto()
+    CANCELED = auto()
 
 
 class MoverSort(AutoName):

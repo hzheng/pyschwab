@@ -11,7 +11,7 @@ from .utils import format_list, format_params, request, time_to_int, time_to_str
 """
 Schwab Market API
 
-Reference: https://beta-developer.schwab.com/products/trader-api--individual/details/specifications/Market%20Data%20Production
+Reference: https://developer.schwab.com/products/trader-api--individual/details/specifications/Market%20Data%20Production
 """
 class MarketApi:
     base_market_url: str

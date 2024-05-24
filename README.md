@@ -52,26 +52,21 @@ print(access_token)
 trading_api = TradingApi(access_token, app_config['trading'])
 
 account_num = 0 # CHANGE this to your actual account number
-trading_data = trading_api.fetch_trading_data(account_num)
+trading_api.set_current_account_number(account_num)
+trading_data = trading_api.fetch_trading_data()
 # List positions
 for position in trading_data.positions:
     print("position:", position)
 
 # List transactions 
-for transaction in trading_api.get_transactions(account_num):
+for transaction in trading_api.get_transactions():
     print("transaction:", transaction)
 
 # Place order
-order_dict = {
-    "orderType": "LIMIT", "session": "NORMAL", "duration": "DAY", "orderStrategyType": "SINGLE", "price": '100.00',
-    "orderLegCollection": [
-        {"instruction": "BUY", "quantity": 1, "instrument": {"symbol": "TSLA", "assetType": "EQUITY"}}
-    ]
-    }
-trading_api.place_order(order_dict, account_num)
+trading_api.buy_equity("TSLA", quantity=1, price=100)
 
 # List orders
-for order in trading_api.get_orders(account_num):
+for order in trading_api.get_orders():
     print("order:", order)
 
 # Example usage of market APIs

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pyschwab"
-version = "0.0.1a3"
+version = "0.0.1a4"
 description = "A Python library for the Schwab trading API"
 authors = ["Hui Zheng <xyz.dll@gmail.com>"]
 license = "MIT"
