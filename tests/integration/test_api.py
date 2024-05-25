@@ -114,9 +114,9 @@ order_dict = {
     }
 
 test_account_number = 0 # CHANGE this to actual account number
- # choose to test different order types: place_dict, place_obj, buy_equity, replace, cancel, preview
+ # choose to test different order types: place_dict, place_obj, buy_equity, replace, cancel, sell_equity, preview
  # WARNING: some options might place or replace an actual order
-test_order_type = [None, 'place_dict', 'place_obj', 'buy_equity', 'replace', 'cancel', 'preview'][0]
+test_order_type = [None, 'place_dict', 'place_obj', 'buy_equity', 'replace', 'cancel', 'sell_equity', 'preview'][0]
 
 
 @pytest.mark.integration
@@ -195,13 +195,16 @@ def test_authentication_and_trading_data(app_config, logging_config):
         print("Testing place order by order obj")
         order = Order.from_dict(order_dict)
         trading_api.place_order(order)
-    elif test_order_type == 'buy_equity':
+    elif test_order_type == 'buy_equity': # make sure to have enough cash to buy
         print("Testing buy equity")
         trading_api.buy_equity("TSLA", quantity=1, price=100)
+    elif test_order_type == 'sell_equity': # make sure to have a position to sell
+        print("Testing sell equity")
+        trading_api.sell_equity("TSLA", quantity=1, price=200)
     else:
-        orders = trading_api.get_working_orders()
+        orders = trading_api.get_open_orders()
         if len(orders) == 0:
-            print("No working order to test replace or cancel")
+            print("No open order to test replace or cancel")
         else:
             order = orders[0]
             order_id = order.order_id

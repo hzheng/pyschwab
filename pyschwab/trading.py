@@ -106,8 +106,11 @@ class TradingApi:
                 return False
         return order.cancel_time is None
 
-    def get_working_orders(self, start_time: datetime=None, end_time: datetime=None) -> List[Order]:
-        return self.get_orders(start_time, end_time, status=OrderStatus.WORKING)
+    def get_open_orders(self, start_time: datetime=None, end_time: datetime=None) -> List[Order]:
+        orders = []
+        for status in [OrderStatus.WORKING, OrderStatus.PENDING_ACTIVATION]:
+            orders.extend(self.get_orders(start_time, end_time, status=status))
+        return orders
 
     def get_order(self, order_id: str, account_num: int | str=None) -> Order:
         account_hash = self._get_account_hash(account_num)

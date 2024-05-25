@@ -63,7 +63,8 @@ for transaction in trading_api.get_transactions():
     print("transaction:", transaction)
 
 # Place order
-trading_api.buy_equity("TSLA", quantity=1, price=100)
+trading_api.buy_equity("TSLA", quantity=10, price=100)
+trading_api.sell_equity("TSLA", quantity=10, price=200)
 
 # List orders
 for order in trading_api.get_orders():
