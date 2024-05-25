@@ -12,7 +12,7 @@ from pyschwab.market_models import OptionChain
 from pyschwab.trading import TradingApi
 from pyschwab.trading_models import Order, TradingData
 from pyschwab.types import MarketType, MoverSort, OrderStatus, SecuritySearch
-from pyschwab.utils import is_subset_object, next_market_open_day, next_sunday
+from pyschwab.utils import is_market_closed, is_subset_object, next_market_open_day, next_sunday
 
 
 @pytest.fixture(scope="module")
@@ -322,7 +322,8 @@ def test_market_data(app_config, logging_config):
 
     movers = market_api.get_movers("$SPX", MoverSort.PERCENT_CHANGE_UP, 10)
     assert movers is not None, "Expected movers to be fetched"
-    # assert len(movers) > 0, "Expected movers to have at least one entry" #TODO: result might be empty
+    if not is_market_closed(): # no movers when market is closed
+        assert len(movers) > 0, "Expected movers to have at least one entry"
     for mover in movers:
         assert mover is not None, "Expected mover to be fetched"
         assert mover.symbol is not None, "Expected symbol to be fetched"

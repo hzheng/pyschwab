@@ -138,6 +138,14 @@ def next_market_open_day():
         next_day += timedelta(days=1)
 
 
+def is_market_closed(dt: datetime=None) -> bool:
+    dt = dt if dt else datetime.now()
+    if dt.weekday() in [5, 6]:
+        return True
+
+    return dt in holidays.US(years=[dt.year, dt.year + 1])
+
+
 def format_param(param: Any) -> str | List[str]:
     if param is None:
         return ""
