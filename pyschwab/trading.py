@@ -5,7 +5,8 @@ from dotenv import load_dotenv
 
 from .utils import format_params, remove_none_values, request, time_to_str, to_json_str
 from .trading_models import Instrument, Order, OrderLeg, SecuritiesAccount, TradingData, Transaction, UserPreference
-from .types import AssetType, ExecutionType, MarketSession, OrderDuration, OrderInstruction, OrderStatus, OrderStrategyType, OrderType, TransactionType
+from .types import AssetType, ExecutionType, MarketSession, OrderDuration, OrderInstruction, OrderStatus, \
+    OrderStrategyType, OrderType, Symbol, TransactionType
 
 
 """
@@ -146,6 +147,16 @@ class TradingApi:
                    duration: OrderDuration=OrderDuration.DAY, session: MarketSession=MarketSession.NORMAL) -> None:
         self.place_single_order(symbol=symbol, quantity=quantity, price=price, instruction=OrderInstruction.SELL,
                                 order_type=order_type, duration=duration, session=session)
+ 
+    def buy_single_option(self, symbol: Symbol | str, quantity: int, price: float, order_type: OrderType=OrderType.LIMIT,
+                          duration: OrderDuration=OrderDuration.DAY, session: MarketSession=MarketSession.NORMAL) -> None:
+        self.place_single_order(symbol=str(symbol), quantity=quantity, price=price, instruction=OrderInstruction.BUY_TO_OPEN,
+                                asset_type=AssetType.OPTION, order_type=order_type, duration=duration, session=session)
+ 
+    def sell_single_option(self, symbol: Symbol | str, quantity: int, price: float, order_type: OrderType=OrderType.LIMIT,
+                           duration: OrderDuration=OrderDuration.DAY, session: MarketSession=MarketSession.NORMAL) -> None:
+        self.place_single_order(symbol=str(symbol), quantity=quantity, price=price, instruction=OrderInstruction.SELL_TO_CLOSE,
+                                asset_type=AssetType.OPTION, order_type=order_type, duration=duration, session=session)
 
     def cancel_order(self, order_id: int | str) -> None:
         account_hash = self._get_account_hash()

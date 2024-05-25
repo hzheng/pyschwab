@@ -33,6 +33,7 @@ import yaml
 
 from pyschwab.auth import Authorizer
 from pyschwab.trading import TradingApi
+from pyschwab.types import Symbol
 from pyschwab.market import MarketApi
 
 # Load configuration
@@ -62,9 +63,16 @@ for position in trading_data.positions:
 for transaction in trading_api.get_transactions():
     print("transaction:", transaction)
 
-# Place order
+# Buy/Sell equity
 trading_api.buy_equity("TSLA", quantity=10, price=100)
 trading_api.sell_equity("TSLA", quantity=10, price=200)
+
+# Buy/Sell option
+symbol = Symbol("RDDT", expiration="260116", call_put=True, strike=50.00)
+trading_api.buy_single_option(symbol, quantity=1, price=10)
+# Or: trading_api.buy_option("RDDT  260116C00050000", quantity=1, price=10)
+
+trading_api.sell_single_option(symbol, quantity=1, price=30)
 
 # List orders
 for order in trading_api.get_orders():

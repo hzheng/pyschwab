@@ -216,17 +216,27 @@ def to_json_str(obj):
 
     return json.dumps(obj, default=json_encode)
 
+
+def get_message(msg: str):
+    try:
+        return json.loads(msg)['message']
+    except Exception:
+        return msg
+
+
 def request(url, method='GET', headers=None, params=None, data=None, json=None) -> requests.Response:
     try:
         response = requests.request(method=method, url=url, headers=headers, params=params, data=data, json=json)
         response.raise_for_status()  # Raises an HTTPError for bad responses
         return response
     except requests.exceptions.HTTPError as e:
+        message = get_message(response.text)
+        error_msg = f"{response.status_code} {response.reason} - {message}"
         if 400 <= response.status_code < 500:
-            raise BadRequestException(f"Client error: {response.status_code} {response.reason}")
+            raise BadRequestException(f"Client error: {error_msg}")
         if 500 <= response.status_code < 600:
-            raise ServerErrorException(f"Server error: {response.status_code} {response.reason}")
-        raise HTTPErrorException(f"HTTP error {response.status_code}: {response.reason}")
+            raise ServerErrorException(f"Server error: {error_msg}")
+        raise HTTPErrorException(f"HTTP error: {error_msg}")
     except requests.exceptions.ConnectionError:
         raise InternetConnectionException("Check your internet connection.")
     except requests.exceptions.RequestException as e:

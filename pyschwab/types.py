@@ -1,3 +1,4 @@
+from datetime import datetime
 from enum import Enum, auto
 from typing import Optional, Type, TypeVar
 
@@ -94,6 +95,47 @@ class PeriodFrequency(BaseModel):
             if v not in valid_frequency:
                 raise ValueError(f'Invalid frequency for frequency_type {frequency_type}, must be one of: {valid_frequency}')
         return v
+
+
+class Symbol(BaseModel):
+    underlying: str = Field(max_length=6)
+    expiration: datetime
+    call_put: bool
+    strike: float
+
+    def __init__(self, underlying: str, **data):
+        super().__init__(underlying=underlying, **data)
+
+    @field_validator('underlying', mode='before')
+    def validate_underlying(cls, v):
+        if len(v) > 6:
+            raise ValueError("Underlying symbol cannot be more than 6 characters")
+        return v.ljust(6)
+
+    @field_validator('expiration', mode='before')
+    def validate_expiration(cls, v):
+        if isinstance(v, str):
+            return datetime.strptime(v, '%y%m%d')
+        return v
+
+    @field_validator('call_put', mode='before')
+    def validate_call_put(cls, v):
+        if not isinstance(v, bool):
+            raise ValueError("Call/Put must be a boolean")
+        return v
+
+    @field_validator('strike', mode='before')
+    def validate_strike(cls, v):
+        if not (0 <= v <= 99999.999):
+            raise ValueError("Strike price must be between 0 and 99999.999")
+        return v
+
+    def __str__(self):
+        underlying_padded = self.underlying.ljust(6)
+        expiration_formatted = self.expiration.strftime('%y%m%d')
+        call_put_formatted = 'C' if self.call_put else 'P'
+        strike_formatted = f"{int(self.strike * 1000):08d}"
+        return f"{underlying_padded}{expiration_formatted}{call_put_formatted}{strike_formatted}"
 
 
 T = TypeVar('T', bound='AutoName')

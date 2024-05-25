@@ -11,7 +11,7 @@ from pyschwab.market import MarketApi
 from pyschwab.market_models import OptionChain
 from pyschwab.trading import TradingApi
 from pyschwab.trading_models import Order, TradingData
-from pyschwab.types import MarketType, MoverSort, OrderStatus, SecuritySearch
+from pyschwab.types import MarketType, MoverSort, OrderStatus, SecuritySearch, Symbol
 from pyschwab.utils import is_market_closed, is_subset_object, next_market_open_day, next_sunday
 
 
@@ -114,9 +114,8 @@ order_dict = {
     }
 
 test_account_number = 0 # CHANGE this to actual account number
- # choose to test different order types: place_dict, place_obj, buy_equity, replace, cancel, sell_equity, preview
- # WARNING: some options might place or replace an actual order
-test_order_type = [None, 'place_dict', 'place_obj', 'buy_equity', 'replace', 'cancel', 'sell_equity', 'preview'][0]
+ # choose to test different order types. WARNING: some options might place or replace an actual order
+test_order_type = [None, 'place_dict', 'place_obj', 'buy_equity', 'buy_single_option', 'replace', 'cancel', 'sell_equity', 'sell_single_option', 'preview'][8]
 
 
 @pytest.mark.integration
@@ -198,9 +197,18 @@ def test_authentication_and_trading_data(app_config, logging_config):
     elif test_order_type == 'buy_equity': # make sure to have enough cash to buy
         print("Testing buy equity")
         trading_api.buy_equity("TSLA", quantity=1, price=100)
+    elif test_order_type == 'buy_single_option': # make sure to have enough cash to buy
+        print("Testing buy single option")
+        symbol = Symbol("RDDT", expiration="260116", call_put=True, strike=50.00)
+        trading_api.buy_single_option(symbol, quantity=1, price=10)
+        # or:
+        # trading_api.buy_option("RDDT  260116C00050000", quantity=1, price=10)
     elif test_order_type == 'sell_equity': # make sure to have a position to sell
         print("Testing sell equity")
         trading_api.sell_equity("TSLA", quantity=1, price=200)
+    elif test_order_type == 'sell_single_option': # make sure to have a position to sell
+        print("Testing sell single option")
+        trading_api.sell_single_option("RDDT  260116C00050000", quantity=1, price=30)
     else:
         orders = trading_api.get_open_orders()
         if len(orders) == 0:

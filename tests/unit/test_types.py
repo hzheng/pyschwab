@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from pyschwab.types import PeriodFrequency
+from pyschwab.types import PeriodFrequency, Symbol
 
 
 def test_valid_day_period():
@@ -10,6 +10,7 @@ def test_valid_day_period():
     assert period_frequency.period == 2
     assert period_frequency.frequency_type == "minute"
     assert period_frequency.frequency == 5
+
 
 def test_default_values():
     period_frequency = PeriodFrequency()
@@ -23,17 +24,25 @@ def test_default_values():
     assert period_frequency.frequency_type == "weekly"
     assert period_frequency.frequency == 1
 
+
 def test_invalid_period():
     with pytest.raises(ValidationError) as exc_info:
         PeriodFrequency(period_type="year", period=25)
     assert "Invalid period for period_type year, must be one of: [1, 2, 3, 5, 10, 15, 20]" in str(exc_info.value)
+
 
 def test_invalid_frequency_type():
     with pytest.raises(ValidationError) as exc_info:
         PeriodFrequency(period_type="day", period=1, frequency_type="daily")
     assert "Invalid frequency_type for period_type day, must be one of: ['minute']" in str(exc_info.value)
 
+
 def test_invalid_frequency():
     with pytest.raises(ValidationError) as exc_info:
         PeriodFrequency(period_type="day", period=1, frequency_type="minute", frequency=45)
     assert "Invalid frequency for frequency_type minute, must be one of: [1, 5, 10, 15, 30]" in str(exc_info.value)
+
+
+def test_symbol_str():
+    symbol = Symbol("RDDT", expiration="260116", call_put=True, strike=50.00)
+    assert str(symbol) == "RDDT  260116C00050000"
