@@ -24,6 +24,9 @@ pip install pyschwab
 2. Copy [pyschwab.yaml](https://github.com/hzheng/pyschwab/blob/main/config/pyschwab.yaml) to your project's `config` directory.
 3. Copy [env_example](https://github.com/hzheng/pyschwab/blob/main/env_example) to `.env` and replace the placeholders with your settings.
 
+## Warning
+**WARNING**: This library can place real orders on your Schwab brokerage account. Use this API at your own risk. The author and contributors are not responsible for any financial losses or unintended trades that may occur as a result of using this library. Ensure you fully understand the functionality and risks before using it in a live trading environment.
+
 ## Usage
 
 Here are some sample usages:
