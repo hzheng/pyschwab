@@ -113,7 +113,6 @@ order_dict = {
     ]
     }
 
-test_account_number = 0 # CHANGE this to actual account number
  # choose to test different order types. WARNING: some options might place or replace an actual order
 test_order_type = [None, 'place_dict', 'place_obj', 'buy_equity', 'buy_single_option', 'replace', 'cancel',
                   'sell_equity', 'sell_single_option', 'trade_spread', 'preview'][0]
@@ -126,10 +125,7 @@ def test_authentication_and_trading_data(app_config, logging_config):
     assert access_token is not None, "Failed to retrieve access token"
 
     trading_api = TradingApi(access_token, app_config['trading'])
-    accounts_hash = trading_api.get_accounts_hash()
-    assert isinstance(accounts_hash, dict), "Expected accounts hash to be a dict"
-    assert len(accounts_hash) > 0, "Expected at least one account to be fetched"
-
+    
     preferences = trading_api.get_user_preference()
     assert preferences is not None, "Expected user preference to be fetched"
     assert preferences.accounts is not None, "Expected accounts to be fetched"
@@ -137,15 +133,23 @@ def test_authentication_and_trading_data(app_config, logging_config):
     assert preferences.streamer_info is not None, "Expected streamer info to be fetched"
     assert preferences.offers is not None, "Expected offers to be fetched"
 
-    assert len(trading_api.get_accounts()) == 0, "Expected no accounts to be fetched initially"
+    current_account_number = trading_api.get_current_account_number()
+    assert current_account_number is not None, "Expected current account number to be fetched"
+
+    accounts_info = trading_api.get_accounts_info()
+    assert len(accounts_info) > 0, "Expected at least one account info to be fetched"
+
+    assert len(trading_api.get_securities_accounts()) == 0, "Expected no securities accounts to be fetched initially"
     account_count = 0
-    for account_num in accounts_hash:
+    for account_num, account_info in accounts_info.items():
         assert len(account_num) > 0, "Expected a non-empty account number to be fetched"
+        assert account_info is not None, "Expected account info to be fetched"
+
         trading_api.set_current_account_number(account_num)
         trading_data = trading_api.fetch_trading_data()
         check_trading_data(trading_data)
         account_count += 1
-        assert len(trading_api.get_accounts()) == account_count, f"Expected {account_count} account(s)"
+        assert len(trading_api.get_securities_accounts()) == account_count, f"Expected {account_count} account(s)"
 
     trading_data_map = trading_api.fetch_all_trading_data()
     assert isinstance(trading_data_map, dict), "Expected trading_data_map to be a dict"
@@ -153,7 +157,7 @@ def test_authentication_and_trading_data(app_config, logging_config):
         assert len(account_num) > 0, "Expected a non-empty account number to be fetched"
         check_trading_data(trading_data)
 
-    for account_num in accounts_hash:
+    for account_num in accounts_info.keys():
         trading_api.set_current_account_number(account_num)
         transactions = trading_api.get_transactions()
         for transaction in transactions:
@@ -184,11 +188,12 @@ def test_authentication_and_trading_data(app_config, logging_config):
     orders = trading_api.get_all_orders(status=OrderStatus.FILLED, max_results=10)
     check_orders(trading_api, orders)
 
-    if not test_account_number or not test_order_type: # no order placement, change, cancellation, or preview
-        print("no account number or order type specified for testing")
+    if not test_order_type: # no order placement, change, cancellation, or preview
+        print("no order type specified for testing")
         return
+    
+    trading_api.set_current_account_number() # make sure we switch back to the primary account
 
-    trading_api.set_current_account_number(test_account_number)
     if test_order_type == 'place_dict':
         print("Testing place order by order dict")
         trading_api.place_order(order_dict)

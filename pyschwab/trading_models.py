@@ -518,3 +518,13 @@ class UserPreference:
         converted_data['streamer_info'] = [StreamerInfo.from_dict(streamer) for streamer in converted_data['streamer_info']]
         converted_data['offers'] = [Offer.from_dict(offer) for offer in converted_data['offers']]
         return cls(**converted_data)
+
+
+@dataclass
+class AccountInfo:
+    account_number: str
+    account_hash: str
+    is_primary: bool
+    type: str
+    nick_name: str
+    display_id: str

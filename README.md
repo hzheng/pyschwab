@@ -54,9 +54,6 @@ print(access_token)
 
 # Example usage of trading APIs
 trading_api = TradingApi(access_token, app_config['trading'])
-
-account_num = 0 # CHANGE this to your actual account number
-trading_api.set_current_account_number(account_num)
 trading_data = trading_api.fetch_trading_data()
 # List positions
 for position in trading_data.positions:

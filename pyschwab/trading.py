@@ -4,7 +4,7 @@ from typing import Any, Dict, List
 from dotenv import load_dotenv
 
 from .utils import format_params, remove_none_values, request, time_to_str, to_date, to_json_str
-from .trading_models import Instrument, Order, OrderLeg, SecuritiesAccount, TradingData, Transaction, UserPreference
+from .trading_models import AccountInfo, Instrument, Order, OrderLeg, SecuritiesAccount, TradingData, Transaction, UserPreference
 from .types import AssetType, ExecutionType, MarketSession, OrderDuration, OrderInstruction, OrderStatus, \
     OrderStrategyType, OrderType, Symbol, TransactionType
 
@@ -22,40 +22,61 @@ class TradingApi:
         self.base_trader_url = trading_config['base_trader_url']
         self.auth = {'Authorization': f'Bearer {access_token}'}
         self.auth2 = {**self.auth, 'Content-Type': 'application/json'}
-        response = request(f'{self.base_trader_url}/accounts/accountNumbers', headers=self.auth).json()
-        self.accounts_hash = {account.get('accountNumber'): account.get('hashValue') for account in response}
-        self.accounts: Dict[str, SecuritiesAccount] = {}
         self.current_account_num = None
+        self.primary_account_num = None
+        self.securities_accounts: Dict[str, SecuritiesAccount] = {}
+        self.accounts_info: Dict[str, AccountInfo] = {}
+        self._init_accounts()
+
+    def _init_accounts(self) -> None:
+        response = request(f'{self.base_trader_url}/accounts/accountNumbers', headers=self.auth).json()
+        accounts_hash = {account.get('accountNumber'): account.get('hashValue') for account in response}
+        for account in self.get_user_preference().accounts:
+            account_num = account.account_number
+            account_hash = accounts_hash.get(account_num, None)
+            is_primary = account.primary_account
+            self.accounts_info[account_num] = AccountInfo(account_number=account_num,
+                                                          account_hash=account_hash,
+                                                          is_primary=is_primary,
+                                                          type=account.type,
+                                                          nick_name=account.nick_name,
+                                                          display_id=account.display_acct_id)
+            if is_primary:
+                self.current_account_num = self.primary_account_num = account_num
  
-    def get_accounts_hash(self) -> Dict[str, str]:
-        return self.accounts_hash
+    def get_accounts_info(self) -> Dict[str, AccountInfo]:
+        return self.accounts_info
  
-    def set_current_account_number(self, account_number: str) -> None:
-        self.current_account_num = account_number
+    def get_account_info(self, account_num: int | str) -> AccountInfo:
+        account_info = self.accounts_info.get(str(account_num), None)
+        if account_info is None:
+            raise ValueError(f"Account number {account_num} not found.")
+
+        return account_info
+ 
+    def set_current_account_number(self, account_number: str=None) -> None:
+        """Set the current account number. If not provided, it will be set to primary account's number."""
+        self.current_account_num = account_number or self.primary_account_num
 
     def get_current_account_number(self) -> str:
+        """Get the current account number. Initially it's primary account's number"""
         return self.current_account_num
 
-    def get_account_hash(self, account_number: str=None) -> str:
-        return self.accounts_hash.get(account_number or self.current_account_num, None)
+    def get_securities_accounts(self) -> Dict[str, SecuritiesAccount]:
+        return self.securities_accounts
  
-    def get_accounts(self) -> Dict[str, SecuritiesAccount]:
-        return self.accounts
- 
-    def get_account(self, account_number: str=None) -> SecuritiesAccount:
-        return self.accounts.get(account_number or self.current_account_num, None)
+    def get_securities_account(self, account_number: str=None) -> SecuritiesAccount:
+        return self.securities_accounts.get(account_number or self.current_account_num, None)
 
     def _get_account_hash(self, account_num: int | str=None) -> str:
         account_num = account_num or self.current_account_num
         if not account_num:
             raise ValueError("Account number not set")
 
-        account_hash = self.accounts_hash.get(str(account_num), None)
-        if account_hash is None:
-            raise ValueError(f"Account number {account_num} not found.")
-        return account_hash
+        account_info = self.get_account_info(account_num)
+        return account_info.account_hash
  
-    def get_user_preference(self):
+    def get_user_preference(self) -> UserPreference:
         response = request(f'{self.base_trader_url}/userPreference', headers=self.auth).json()
         return UserPreference.from_dict(response)
 
@@ -65,7 +86,7 @@ class TradingApi:
         resp = request(f'{self.base_trader_url}/accounts/{account_hash}', headers=self.auth, params=params).json()
         trading_data = TradingData.from_dict(resp)
         account = trading_data.account
-        self.accounts[account.account_number] = account
+        self.securities_accounts[account.account_number] = account
         return trading_data
 
     def fetch_all_trading_data(self, include_pos: bool=True) -> Dict[str, TradingData]:
@@ -76,7 +97,7 @@ class TradingApi:
             account = trading_data.account
             account_num = account.account_number
             trading_data_map[account_num] = trading_data
-            self.accounts[account_num] = account
+            self.securities_accounts[account_num] = account
         return trading_data_map
 
     def get_all_orders(self, start_time: datetime=None, end_time: datetime=None, status: OrderStatus=None, max_results: int=None) -> List[Order]:
