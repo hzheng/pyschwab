@@ -3,7 +3,7 @@ from typing import Any, Dict, List
 
 from dotenv import load_dotenv
 
-from .utils import format_params, remove_none_values, request, time_to_str, to_json_str
+from .utils import format_params, remove_none_values, request, time_to_str, to_date, to_json_str
 from .trading_models import Instrument, Order, OrderLeg, SecuritiesAccount, TradingData, Transaction, UserPreference
 from .types import AssetType, ExecutionType, MarketSession, OrderDuration, OrderInstruction, OrderStatus, \
     OrderStrategyType, OrderType, Symbol, TransactionType
@@ -157,6 +157,29 @@ class TradingApi:
                            duration: OrderDuration=OrderDuration.DAY, session: MarketSession=MarketSession.NORMAL) -> None:
         self.place_single_order(symbol=str(symbol), quantity=quantity, price=price, instruction=OrderInstruction.SELL_TO_CLOSE,
                                 asset_type=AssetType.OPTION, order_type=order_type, duration=duration, session=session)
+ 
+    def trade_spread(self, underlying_symbol: str, price: float, expiration: datetime | str, buy_sell: bool, call_put: bool, strikes: List[float], quantity: int,
+                    duration: OrderDuration=OrderDuration.DAY, session: MarketSession=MarketSession.NORMAL) -> None:
+        if len(strikes) != 2:
+            raise ValueError("Must provide 2 strikes for a spread order.")
+
+        if buy_sell ^ call_put: # For bear call spreads and bull put spreads, reverse the order
+            strikes.reverse()
+        else:
+            strikes.sort()
+        order_type = OrderType.NET_DEBIT if buy_sell else OrderType.NET_CREDIT
+        instructions = [OrderInstruction.BUY_TO_OPEN, OrderInstruction.SELL_TO_OPEN]
+        
+        expiration_dt = to_date(expiration)
+        leg_collection = []
+        for i in range(2):
+            symbol = Symbol(underlying_symbol, expiration=expiration_dt, call_put=call_put, strike=strikes[i])
+            instrument = Instrument(symbol=str(symbol), asset_type=AssetType.OPTION)
+            leg = OrderLeg(instrument=instrument, quantity=quantity, instruction=instructions[i])
+            leg_collection.append(leg)
+        order = Order(price=price, order_leg_collection=leg_collection, order_strategy_type=OrderStrategyType.SINGLE,
+                      order_type=order_type, duration=duration, session=session)
+        self.place_order(order)
 
     def cancel_order(self, order_id: int | str) -> None:
         account_hash = self._get_account_hash()

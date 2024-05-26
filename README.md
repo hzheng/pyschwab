@@ -77,6 +77,9 @@ trading_api.buy_single_option(symbol, quantity=1, price=10)
 
 trading_api.sell_single_option(symbol, quantity=1, price=30)
 
+# Buy Call Spread
+trading_api.trade_spread("TSLA", 0.9,  "2024-05-31", buy_sell=True, call_put=True, strikes=[177.5, 180], quantity=1)
+
 # List orders
 for order in trading_api.get_orders():
     print("order:", order)

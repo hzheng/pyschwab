@@ -120,6 +120,16 @@ def to_time(dt: datetime | str | int) -> datetime:
     raise ValueError("Invalid datetime format.")
 
 
+def to_date(dt: datetime | str) -> datetime:
+    if dt is None or isinstance(dt, datetime):
+        return dt
+
+    if isinstance(dt, str):
+        return datetime.strptime(dt, '%Y-%m-%d')
+ 
+    raise ValueError("Invalid datetime format.")
+
+
 def next_sunday():
     today = datetime.now()
     days_until_sunday = (6 - today.weekday()) % 7

@@ -219,6 +219,7 @@ class OrderStrategyType(AutoName):
     FLATTEN = auto()
     TWO_DAY_SWAP = auto()
     BLAST_ALL = auto()
+    # One Cancels Another
     OCO = auto()
     TRIGGER = auto()
 

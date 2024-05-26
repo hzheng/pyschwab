@@ -115,7 +115,8 @@ order_dict = {
 
 test_account_number = 0 # CHANGE this to actual account number
  # choose to test different order types. WARNING: some options might place or replace an actual order
-test_order_type = [None, 'place_dict', 'place_obj', 'buy_equity', 'buy_single_option', 'replace', 'cancel', 'sell_equity', 'sell_single_option', 'preview'][8]
+test_order_type = [None, 'place_dict', 'place_obj', 'buy_equity', 'buy_single_option', 'replace', 'cancel',
+                  'sell_equity', 'sell_single_option', 'trade_spread', 'preview'][0]
 
 
 @pytest.mark.integration
@@ -184,6 +185,7 @@ def test_authentication_and_trading_data(app_config, logging_config):
     check_orders(trading_api, orders)
 
     if not test_account_number or not test_order_type: # no order placement, change, cancellation, or preview
+        print("no account number or order type specified for testing")
         return
 
     trading_api.set_current_account_number(test_account_number)
@@ -209,6 +211,9 @@ def test_authentication_and_trading_data(app_config, logging_config):
     elif test_order_type == 'sell_single_option': # make sure to have a position to sell
         print("Testing sell single option")
         trading_api.sell_single_option("RDDT  260116C00050000", quantity=1, price=30)
+    elif test_order_type == 'trade_spread':
+        print("Testing spread")
+        trading_api.trade_spread("TSLA", 0.9,  "2024-05-31", buy_sell=True, call_put=True, strikes=[177.5, 180], quantity=1)
     else:
         orders = trading_api.get_open_orders()
         if len(orders) == 0:
