@@ -110,7 +110,7 @@ class Symbol(BaseModel):
     def validate_underlying(cls, v):
         if len(v) > 6:
             raise ValueError("Underlying symbol cannot be more than 6 characters")
-        return v.ljust(6)
+        return v
 
     @field_validator('expiration', mode='before')
     def validate_expiration(cls, v):

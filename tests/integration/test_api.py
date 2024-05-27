@@ -1,4 +1,6 @@
 from datetime import datetime
+import json
+import os
 from typing import List
 
 import pytest
@@ -36,6 +38,14 @@ def logging_config():
  
     logger.removeHandler(stream_handler)
     stream_handler.close()
+
+
+@pytest.fixture(scope="module")
+def test_cases():
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    json_path = os.path.join(script_dir, 'test_api.json')
+    with open(json_path) as f:
+        return json.load(f).get("tests")
 
 
 def check_trading_data(trading_data: TradingData):
@@ -106,20 +116,8 @@ def check_orders(trading_api: TradingApi, orders: List[Order]):
         assert detailed_order == order, "Expected detailed order to match order"
 
 
-order_dict = {
-    "orderType": "LIMIT", "session": "NORMAL", "duration": "DAY", "orderStrategyType": "SINGLE", "price": '100.00',
-    "orderLegCollection": [
-        {"instruction": "BUY", "quantity": 1, "instrument": {"symbol": "TSLA", "assetType": "EQUITY"}}
-    ]
-    }
-
- # choose to test different order types. WARNING: some options might place or replace an actual order
-test_order_type = [None, 'place_dict', 'place_obj', 'buy_equity', 'buy_single_option', 'replace', 'cancel',
-                  'sell_equity', 'sell_single_option', 'trade_spread', 'preview'][0]
-
-
 @pytest.mark.integration
-def test_authentication_and_trading_data(app_config, logging_config):
+def test_authentication_and_trading_data(app_config, logging_config, test_cases):
     authorizer = Authorizer(app_config['auth'])
     access_token = authorizer.get_access_token()
     assert access_token is not None, "Failed to retrieve access token"
@@ -188,57 +186,111 @@ def test_authentication_and_trading_data(app_config, logging_config):
     orders = trading_api.get_all_orders(status=OrderStatus.FILLED, max_results=10)
     check_orders(trading_api, orders)
 
-    if not test_order_type: # no order placement, change, cancellation, or preview
-        print("no order type specified for testing")
-        return
-    
     trading_api.set_current_account_number() # make sure we switch back to the primary account
+ 
+    # get an active order
+    orders = trading_api.get_open_orders()
+    order = orders[0] if len(orders) > 0 else None
 
-    if test_order_type == 'place_dict':
-        print("Testing place order by order dict")
-        trading_api.place_order(order_dict)
-    elif test_order_type == 'place_obj':
-        print("Testing place order by order obj")
-        order = Order.from_dict(order_dict)
-        trading_api.place_order(order)
-    elif test_order_type == 'buy_equity': # make sure to have enough cash to buy
-        print("Testing buy equity")
-        trading_api.buy_equity("TSLA", quantity=1, price=100)
-    elif test_order_type == 'buy_single_option': # make sure to have enough cash to buy
-        print("Testing buy single option")
-        symbol = Symbol("RDDT", expiration="260116", call_put=True, strike=50.00)
-        trading_api.buy_single_option(symbol, quantity=1, price=10)
-        # or:
-        # trading_api.buy_option("RDDT  260116C00050000", quantity=1, price=10)
-    elif test_order_type == 'sell_equity': # make sure to have a position to sell
-        print("Testing sell equity")
-        trading_api.sell_equity("TSLA", quantity=1, price=200)
-    elif test_order_type == 'sell_single_option': # make sure to have a position to sell
-        print("Testing sell single option")
-        trading_api.sell_single_option("RDDT  260116C00050000", quantity=1, price=30)
-    elif test_order_type == 'trade_spread':
-        print("Testing spread")
-        trading_api.trade_spread("TSLA", 0.9,  "2024-05-31", buy_sell=True, call_put=True, strikes=[177.5, 180], quantity=1)
-    else:
-        orders = trading_api.get_open_orders()
-        if len(orders) == 0:
-            print("No open order to test replace or cancel")
+    # test various order types. WARNING: some tests might place or replace an actual order!
+    test_place_dict = test_cases["place_dict"]
+    if test_place_dict["enabled"]:
+        order_dict = test_place_dict["order_dict"]
+        print(test_place_dict["info"].format(order_dict=order_dict))
+        if test_place_dict["dry_run"]:
+            print("dry run enabled, skipping order placement")
         else:
-            order = orders[0]
-            order_id = order.order_id
-            if test_order_type == 'cancel':
-                print("Testing cancel order with id=", order_id)
-                trading_api.cancel_order(order_id)
-            elif test_order_type == 'replace':
-                order.price -= 0.1
-                cur_qty = order.order_leg_collection[0].quantity
-                qty = 2 if cur_qty == 1 else 1 # keep quantity small and avoid replacing with the same quantity
-                order.order_leg_collection[0].quantity = qty
-                print("Testing replace order with id=", order_id, " with new price =", order.price, " and quantity =", qty)
+            trading_api.place_order(order_dict)
+
+    test_place_obj = test_cases["place_obj"]
+    if test_place_obj["enabled"]:
+        order_dict = test_place_obj["order_dict"]
+        order_obj = Order.from_dict(order_dict)
+        print(test_place_obj["info"].format(order_obj=order_obj))
+        if test_place_obj["dry_run"]:
+            print("dry run enabled, skipping order placement")
+        else:
+            trading_api.place_order(order_obj)
+
+    test_buy_equity = test_cases["buy_equity"]
+    if test_buy_equity["enabled"]:
+        equity = test_buy_equity["equity"]
+        print(test_buy_equity["info"].format(equity=equity))
+        if test_buy_equity["dry_run"]:
+            print("dry run enabled, skipping equity purchase")
+        else:
+            trading_api.buy_equity(**equity)
+
+    test_sell_equity = test_cases["sell_equity"]
+    if test_sell_equity["enabled"]:
+        equity = test_sell_equity["equity"]
+        print(test_sell_equity["info"].format(equity=equity))
+        if test_sell_equity["dry_run"]:
+            print("dry run enabled, skipping equity sale")
+        else:
+            trading_api.sell_equity(**equity)
+
+    test_buy_single_option = test_cases["buy_single_option"]
+    if test_buy_single_option["enabled"]:
+        option_dict = test_buy_single_option["option"]
+        symbol = Symbol(**(option_dict['symbol']))
+        option = {**option_dict, 'symbol': symbol}
+        print(test_buy_single_option["info"].format(option=option))
+        if test_buy_single_option["dry_run"]:
+            print("dry run enabled, skipping option purchase")
+        else:
+            trading_api.buy_single_option(**option)
+
+    test_sell_single_option = test_cases["sell_single_option"]
+    if test_sell_single_option["enabled"]:
+        option_dict = test_sell_single_option["option"]
+        print(test_sell_single_option["info"].format(option=option_dict))
+        if test_sell_single_option["dry_run"]:
+            print("dry run enabled, skipping option sale")
+        else:
+            trading_api.sell_single_option(**option_dict)
+
+    test_buy_call_spread = test_cases["buy_call_spread"]
+    if test_buy_call_spread["enabled"]:
+        spread = test_buy_call_spread["spread"]
+        print(test_buy_call_spread["info"].format(spread=spread))
+        if test_buy_call_spread["dry_run"]:
+            print("dry run enabled, skipping call spread purchase")
+        else:
+            trading_api.trade_spread(**spread)
+
+    test_replace = test_cases["replace"]
+    if test_replace["enabled"]:
+        if order is None:
+            print("No open order to test replace")
+        else:
+            order.price -= 0.1
+            cur_qty = order.order_leg_collection[0].quantity
+            qty = 2 if cur_qty == 1 else 1 # keep quantity small and avoid replacing with the same quantity
+            order.order_leg_collection[0].quantity = qty
+            print(test_replace["info"].format(order_id=order.order_id, price=order.price, quantity=qty))
+            if test_replace["dry_run"]:
+                print("dry run enabled, skipping order replacement")
+            else:
                 trading_api.replace_order(order)
+
+    test_cancel = test_cases["cancel"]
+    if test_cancel["enabled"]:
+        if order is None:
+            print("No open order to test cancel")
+        else:
+            print(test_cancel["info"].format(order=order))
+            if test_cancel["dry_run"]:
+                print("dry run enabled, skipping order cancellation")
+            else:
+                trading_api.cancel_order(order.order_id)
 
 
 def test_order_json():
+    order_dict = {
+        "orderType": "LIMIT", "session": "NORMAL", "duration": "DAY", "orderStrategyType": "SINGLE", "price": '100.00',
+        "orderLegCollection": [{"instruction": "BUY", "quantity": 1, "instrument": {"symbol": "TSLA", "assetType": "EQUITY"}}]
+    }
     order = Order.from_dict(order_dict)
     order_dict2 = order.to_dict()
     assert is_subset_object(order_dict, order_dict2), "Expected order to be serialized and deserialized correctly"

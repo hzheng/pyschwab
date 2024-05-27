@@ -99,6 +99,16 @@ history = market_api.get_price_history('TSLA')
 print(history)
 ```
 
+## Tests
+
+To run the tests, use the following command:
+
+```bash
+pytest -s
+```
+
+You can customize the tests by editing the `test_api.json` file. Each test case has enabled/dry_run attribute that you can toggle. 
+
 ---
 
 ## License

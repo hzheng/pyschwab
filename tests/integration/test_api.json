@@ -1,0 +1,130 @@
+{
+    "tests": {
+        "place_dict": {
+            "enabled": 0,
+            "dry_run": 0,
+            "info": "Placing order by order dict: {order_dict}",
+            "order_dict": {
+                "orderType": "LIMIT",
+                "session": "NORMAL",
+                "duration": "DAY",
+                "orderStrategyType": "SINGLE",
+                "price": "100.00",
+                "orderLegCollection": [
+                    {
+                        "instruction": "BUY",
+                        "quantity": 1,
+                        "instrument": {
+                            "symbol": "TSLA",
+                            "assetType": "EQUITY"
+                        }
+                    }
+                ]
+            }
+        },
+
+        "place_obj": {
+            "enabled": 0,
+            "dry_run": 0,
+            "info": "Placing order by order object: {order_obj}",
+            "order_dict": {
+                "orderType": "LIMIT",
+                "session": "NORMAL",
+                "duration": "DAY",
+                "orderStrategyType": "SINGLE",
+                "price": "101.00",
+                "orderLegCollection": [
+                    {
+                        "instruction": "BUY",
+                        "quantity": 1,
+                        "instrument": {
+                            "symbol": "TSLA",
+                            "assetType": "EQUITY"
+                        }
+                    }
+                ]
+            }
+        },
+
+        "buy_equity": {
+            "enabled": 0,
+            "dry_run": 0,
+            "info": "Buying equity: {equity}",
+            "equity": {
+                "symbol": "TSLA",
+                "quantity": 1,
+                "price": 102
+            }
+        },
+
+        "sell_equity": {
+            "enabled": 0,
+            "dry_run": 0,
+            "info": "Selling equity: {equity}",
+            "equity": {
+                "symbol": "TSLA",
+                "quantity": 1,
+                "price": 200
+            }
+        },
+
+        "buy_single_option": {
+            "enabled": 0,
+            "dry_run": 0,
+            "info": "Buying single option: {option}",
+            "option": {
+                "symbol": {
+                    "underlying": "RDDT",
+                    "expiration": "260116",
+                    "call_put": true,
+                    "strike": 50.00
+                },
+                "quantity": 1,
+                "price": 10
+            }
+        },
+
+        "sell_single_option": {
+            "enabled": 0,
+            "dry_run": 0,
+            "info": "Selling single option: {option}",
+            "option": {
+                "symbol": "RDDT  260116C00050000",
+                "quantity": 1,
+                "price": 30
+            }
+        },
+
+        "buy_call_spread": {
+            "enabled": 0,
+            "dry_run": 0,
+            "info": "Buying call spread: {spread}",
+            "spread": {
+                "underlying": "TSLA",
+                "price": 0.9,
+                "expiration": "2024-05-31",
+                "buy_sell": true,
+                "call_put": true,
+                "strikes": [177.5, 180],
+                "quantity": 1
+            }
+        },
+
+        "replace": {
+            "enabled": 0,
+            "dry_run": 0,
+            "info": "Replacing order with id={order_id} with new price={price} and new quantity={quantity}"
+        },
+
+        "cancel": {
+            "enabled": 0,
+            "dry_run": 0,
+            "info": "Canceling order: {order}"
+        },
+
+        "preview": {
+            "enabled": 0,
+            "dry_run": 0
+        }
+    }
+}

@@ -179,7 +179,7 @@ class TradingApi:
         self.place_single_order(symbol=str(symbol), quantity=quantity, price=price, instruction=OrderInstruction.SELL_TO_CLOSE,
                                 asset_type=AssetType.OPTION, order_type=order_type, duration=duration, session=session)
  
-    def trade_spread(self, underlying_symbol: str, price: float, expiration: datetime | str, buy_sell: bool, call_put: bool, strikes: List[float], quantity: int,
+    def trade_spread(self, underlying: str, price: float, expiration: datetime | str, buy_sell: bool, call_put: bool, strikes: List[float], quantity: int,
                     duration: OrderDuration=OrderDuration.DAY, session: MarketSession=MarketSession.NORMAL) -> None:
         if len(strikes) != 2:
             raise ValueError("Must provide 2 strikes for a spread order.")
@@ -194,7 +194,7 @@ class TradingApi:
         expiration_dt = to_date(expiration)
         leg_collection = []
         for i in range(2):
-            symbol = Symbol(underlying_symbol, expiration=expiration_dt, call_put=call_put, strike=strikes[i])
+            symbol = Symbol(underlying, expiration=expiration_dt, call_put=call_put, strike=strikes[i])
             instrument = Instrument(symbol=str(symbol), asset_type=AssetType.OPTION)
             leg = OrderLeg(instrument=instrument, quantity=quantity, instruction=instructions[i])
             leg_collection.append(leg)
