@@ -7,7 +7,7 @@ A Python library for interacting with the Schwab API, providing simple access to
 
 ## Prerequisites
 1. You need to have a Schwab brokerage account.
-2. Become an Individual Developer via the [Schwab Developer Portal](https://beta-developer.schwab.com/).
+2. Become an Individual Developer via the [Schwab Developer Portal](https://developer.schwab.com/).
 3. Create an individual developer app and wait until its status is "Ready for use".
 
 ## Installation

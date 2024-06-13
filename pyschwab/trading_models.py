@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 
 from .types import ActivityType, AssetType, ComplexOrderStrategyType, ExecutionType, MarketSession, OptionActionType, \
     OptionAssetType, OrderDuration, OrderInstruction, OrderStatus, OrderStrategyType, OrderType, \
-    PositionEffect, QuantityType, RequestedDestination
+    PositionEffect, QuantityType, RequestedDestination, TransactionStatus, TransactionType
 from .utils import camel_to_snake, dataclass_to_dict, to_time
 
 
@@ -43,13 +43,15 @@ class Deliverable:
     status: str
     symbol: str
     instrument_id: int
-    closing_price: float
-    type: str
+    closing_price: float = None
+    type: str = None
+    description: str = None
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'Deliverable':
         if data is None:
             return None
+        
         converted_data = {camel_to_snake(key): value for key, value in data.items()}
         converted_data['asset_type'] = OptionAssetType.from_str(converted_data['asset_type'])
         return cls(**converted_data)
@@ -217,6 +219,11 @@ class Balance:
     short_market_value: float = 0.0
     buying_power_non_marginable_trade: float = 0.0
     sma: float = 0.0
+    cash_available_for_withdrawal: float = 0.0
+    cash_debit_call_value: float = 0.0
+    unsettled_cash: float = 0.0
+    cash_call: float = 0.0
+    long_non_marginable_market_value: float = 0.0
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]):
@@ -297,6 +304,7 @@ class OrderActivity:
     quantity: int
     order_remaining_quantity: int
     execution_legs: List[ExecutionLeg]
+    activity_id: int = None
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'OrderActivity':
@@ -438,8 +446,8 @@ class User:
 class Transaction:
     activity_id: int
     time: datetime
-    type: str
-    status: str
+    type: TransactionType
+    status: TransactionStatus
     net_amount: float
     account_number: str
     sub_account: str
@@ -450,12 +458,14 @@ class Transaction:
     trade_date: datetime = None
     settlement_date: datetime = None
     description: str = None
-    activity_type: str = None
+    activity_type: ActivityType = None
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'Transaction':
         converted_data = {camel_to_snake(key): value for key, value in data.items()}
         converted_data['user'] = User.from_dict(converted_data.get('user', None))
+        converted_data['type'] = TransactionType.from_str(converted_data['type'])
+        converted_data['status'] = TransactionStatus.from_str(converted_data['status'])
         for dt_key in ['time', 'trade_date', 'settlement_date']:
             dt = converted_data.get(dt_key, None)
             if dt:

@@ -333,6 +333,13 @@ class RequestedDestination(AutoName):
     AUTO = auto()
 
 
+class TransactionStatus(AutoName):
+    VALID = auto()
+    INVALID = auto()
+    PENDING = auto()
+    UNKNOWN = auto()
+
+
 class TransactionType(AutoName):
     TRADE = auto()
     RECEIVE_AND_DELIVER = auto()
@@ -384,8 +391,11 @@ class OptionStrategy(AutoName):
 
 
 class ActivityType(AutoName):
+    ACTIVITY_CORRECTION = auto()
     EXECUTION = auto()
     ORDER_ACTION = auto()
+    TRANSFER = auto()
+    UNKNOWN = auto()
 
 
 class ExecutionType(AutoName):

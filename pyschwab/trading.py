@@ -233,7 +233,7 @@ class TradingApi:
             raise ValueError("Order must be a dictionary or Order object.")
         return remove_none_values(order_dict)
 
-    def get_transactions(self, start_time: datetime=None, end_time: datetime=None, symbol: str=None, types: TransactionType=TransactionType.TRADE) -> List[Transaction]:
+    def get_transactions(self, start_time: datetime=None, end_time: datetime=None, symbol: str=None, types: TransactionType=None) -> List[Transaction]:
         account_hash = self._get_account_hash()
         now = datetime.now()
         start = time_to_str(start_time or now - timedelta(days=30))
